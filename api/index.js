@@ -4,7 +4,7 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware de CORS atualizado
+// Middleware de CORS
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -17,7 +17,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Rota para buscar dados do Google Sheets
+// Rota para acessar dados do Google Sheets
 app.get("/dados", async (req, res) => {
     try {
         const googleSheetsURL = "1-r5uYv0yTB3__2rrHNLiosd2mFHHCdJAjwMdvxUKXRQ"; // Substitua pela URL pública do Google Sheets
