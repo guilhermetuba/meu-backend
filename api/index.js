@@ -1,32 +1,20 @@
-const express = require("express");
-const axios = require("axios");
-
+const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware de CORS
+// Middleware para CORS
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, Content-Type");
-
     if (req.method === "OPTIONS") {
         return res.sendStatus(204);
     }
-    
     next();
 });
 
-// Rota para acessar dados do Google Sheets
-app.get("/dados", async (req, res) => {
-    try {
-        const googleSheetsURL = "1-r5uYv0yTB3__2rrHNLiosd2mFHHCdJAjwMdvxUKXRQ"; // Substitua pela URL pública do Google Sheets
-        const response = await axios.get(googleSheetsURL);
-        res.json(response.data);
-    } catch (error) {
-        res.status(500).json({ error: "Erro ao buscar dados" });
-    }
+// Rota para a API
+app.get('/dados', (req, res) => {
+    res.json({ message: "Dados do servidor" });
 });
 
-// Inicia o servidor
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+module.exports = app;
