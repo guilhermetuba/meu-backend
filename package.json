@@ -1,14 +1,16 @@
 {
   "name": "meu-backend",
   "version": "1.0.0",
-  "description": "Backend para acessar Google Sheets sem problemas de CORS",
-  "main": "index.js",
+  "description": "Backend para a aplicação",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.17.1",
-    "axios": "^1.3.0",
-    "cors": "^2.8.5"
+    "googleapis": "^39.2.0"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
