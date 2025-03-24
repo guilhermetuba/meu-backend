@@ -9,7 +9,7 @@ app.use(express.json());
 
 // Rota para a raiz
 app.get('/', (req, res) => {
-  res.send('Servidor funcionando corretamente!');
+  res.send('Servidor kkk funcionando corretamente!');
 });
 
 // Rota para adicionar um cliente
