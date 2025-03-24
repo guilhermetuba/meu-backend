@@ -2,7 +2,6 @@ const express = require('express');
 const { google } = require('googleapis');
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 // Middleware para lidar com JSON
 app.use(express.json());
@@ -16,11 +15,12 @@ app.get('/', (req, res) => {
 app.post('/adicionar-cliente', async (req, res) => {
   const { nome, cpf, telefone, email, endereco, observacoes } = req.body;
 
-  // Aqui vai a lógica para interagir com o Google Sheets (se necessário)
-  // Exemplo de resposta:
+  // A lógica para o Google Sheets vem aqui
+
   res.status(200).json({ message: 'Cliente adicionado com sucesso!' });
 });
 
-// Iniciar o servidor (no Vercel, ele será tratado automaticamente)
-module.exports = app; // Exporta a aplicação, pois Vercel usa funções serverless
+// Exporta o app para o Vercel
+module.exports = app; // IMPORTANTE: Exporte o app para Vercel funcionar
+
 
