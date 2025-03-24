@@ -20,7 +20,7 @@ const sheets = google.sheets({ version: 'v4', auth: oAuth2Client });
 app.get('/clientes', async (req, res) => {
   try {
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: 'SEU_SPREADSHEET_ID', // Substitua pelo ID da sua planilha
+      spreadsheetId: '1-r5uYv0yTB3__2rrHNLiosd2mFHHCdJAjwMdvxUKXRQ', // Substitua pelo ID da sua planilha
       range: 'Clientes!A2:F', // Intervalo da aba "Clientes" (ajuste conforme necessário)
     });
 
