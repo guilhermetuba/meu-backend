@@ -1,24 +1,24 @@
 const express = require('express');
 const { google } = require('googleapis');
+const fs = require('fs');
+require('dotenv').config(); // Carregar variáveis de ambiente
 const app = express();
 const port = process.env.PORT || 3000;
-// Carregar o arquivo JSON contendo as credenciais
-const credentials = JSON.parse(fs.readFileSync('credentials.json', 'utf-8'));
 
+// Configurar cliente OAuth2 com variáveis de ambiente
 const oauth2Client = new google.auth.OAuth2(
-  credentials.client_id,
-  credentials.client_secret,
-  credentials.redirect_uri
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
 );
 
 const scopes = ['https://www.googleapis.com/auth/spreadsheets'];
 
-
 // Defina o token de autenticação previamente obtido (via OAuth2)
-oAuth2Client.setCredentials({ access_token: 'ya29.a0AeXRPp4M_Vg3VYc9uZ9JBVEu9Aof2qtrd_hHLjJNPCmL985IRoCSSxkI_qhkBwJhEfMZTkNI0lAO68Y0Wl2dAdf-IfpvDUKNo-dRB5AEoInx7LHymeMYuI2TOous0qJMwt18V_A11aHDm6ChvoTIuChbReYLf-QGdqX6KIM9aCgYKAYISARMSFQHGX2Mi_SmMInYWHR8TSP7rj8xQlg0175' });
+oauth2Client.setCredentials({ access_token: process.env.GOOGLE_ACCESS_TOKEN });
 
 // Inicializa o cliente do Google Sheets
-const sheets = google.sheets({ version: 'v4', auth: oAuth2Client });
+const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
 
 // Rota para exibir os dados da planilha "Semijoias" na aba "Clientes"
 app.get('/clientes', async (req, res) => {
@@ -51,6 +51,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
-
-
-
