@@ -1,15 +1,16 @@
 const express = require('express');
 const { google } = require('googleapis');
 
+// Inicializar o Express
 const app = express();
-const port = process.env.PORT || 3000; // O Vercel vai passar uma variável PORT
+const port = process.env.PORT || 3000;  // Use a variável de ambiente PORT para rodar no Vercel
 
 // Middleware para lidar com JSON
 app.use(express.json());
 
 // Rota para a raiz
 app.get('/', (req, res) => {
-  res.send('Servidor kkk funcionando corretamente!');
+  res.send('Servidor funcionando corretamente!');
 });
 
 // Rota para adicionar um cliente
@@ -59,6 +60,7 @@ app.post('/adicionar-cliente', async (req, res) => {
   }
 });
 
-// Servir o app para o Vercel (não precisa de `app.listen` no Vercel)
-module.exports = app;
-
+// Iniciar o servidor
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
+});
