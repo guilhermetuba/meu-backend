@@ -2,13 +2,13 @@ const express = require('express');
 const { google } = require('googleapis');
 const app = express();
 const port = process.env.PORT || 3000;
-require('dotenv').config();
+// Carregar o arquivo JSON contendo as credenciais
+const credentials = JSON.parse(fs.readFileSync('credentials.json', 'utf-8'));
 
-// Substitua com as credenciais da sua conta de serviço ou OAuth2
 const oauth2Client = new google.auth.OAuth2(
-  process.env.CLIENT_ID,        // Usando a variável de ambiente
-  process.env.CLIENT_SECRET,    // Usando a variável de ambiente
-  process.env.REDIRECT_URI     // Usando a variável de ambiente
+  credentials.client_id,
+  credentials.client_secret,
+  credentials.redirect_uri
 );
 
 const scopes = ['https://www.googleapis.com/auth/spreadsheets'];
