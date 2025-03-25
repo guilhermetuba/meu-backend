@@ -16,7 +16,7 @@
 
       // Verificar se o código já está cadastrado
       const codigosExistentes = codigosExistentes.some(c => c[0] === codigo);
-      if (cpfExistente) {
+      if (codigosExistente) {
         return res.status(400).json({ message: "Código já cadastrado." });
       }
 
