@@ -1,3 +1,25 @@
+export default function handler(req, res) {
+  // Configuração de CORS
+  res.setHeader("Access-Control-Allow-Origin", "https://guilhermetuba.github.io"); // Apenas seu frontend pode acessar
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Responde a requisições OPTIONS (preflight do CORS)
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method === "POST") {
+    const dados = req.body;
+    console.log("Dados recebidos:", dados);
+
+    return res.status(200).json({ status: "success", message: "Cliente cadastrado com sucesso!" });
+  }
+
+  return res.status(405).json({ error: "Método não permitido" });
+}
+
+
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
 
