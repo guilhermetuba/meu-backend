@@ -52,3 +52,19 @@ if (req.method === "POST") {
   } else {
     res.status(405).json({ message: 'Método não permitido' });
   }
+  
+// Função para autenticar com o Google Sheets API
+async function authenticate() {
+  const { google } = require('googleapis');
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
+  oauth2Client.setCredentials({
+    refresh_token: process.env.REFRESH_TOKEN,
+  });
+
+  const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
+  return sheets;
+}
