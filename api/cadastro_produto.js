@@ -1,44 +1,44 @@
   if (req.method === "POST") {
     try {
-      const { nome, cpf, telefone, email, endereco, observacoes } = req.body;
+      const { codigo, produto, fornecedor, categoria, quantidade, precoCusto, precoVenda } = req.body;
 
       const sheets = await authenticate();
       const spreadsheetId = process.env.SPREADSHEET_ID; // ID da planilha
 
-      // Verificar se o CPF já existe na aba "Clientes"
+      // Verificar se o código já existe na aba "Estoque"
       const request = {
         spreadsheetId: spreadsheetId,
-        range: 'Clientes!B2:B', // Coluna B contém os CPFs
+        range: 'Estoque!A2:A', // Coluna B contém os CPFs
       };
 
       const response = await sheets.spreadsheets.values.get(request);
-      const cpfsExistentes = response.data.values || [];
+      const codigosExistentes = response.data.values || [];
 
-      // Verificar se o CPF já está cadastrado
-      const cpfExistente = cpfsExistentes.some(c => c[0] === cpf);
+      // Verificar se o código já está cadastrado
+      const codigosExistentes = codigosExistentes.some(c => c[0] === codigo);
       if (cpfExistente) {
-        return res.status(400).json({ message: "CPF já cadastrado." });
+        return res.status(400).json({ message: "Código já cadastrado." });
       }
 
-      // Adicionar o novo cliente
+      // Adicionar o novo produto
       const addRequest = {
         spreadsheetId: spreadsheetId,
-        range: 'Clientes!A2', // A célula inicial da aba "Clientes"
+        range: 'Estoque!A2', // A célula inicial da aba "Estoque"
         valueInputOption: 'RAW',
         resource: {
           values: [
-            [nome, cpf, telefone, email, endereco, observacoes], // Linha de dados
+            [codigo, produto, fornecedor, categoria, quantidade, precoCusto, precoVenda], // Linha de dados
           ],
         },
       };
 
       await sheets.spreadsheets.values.append(addRequest);
 
-      res.status(200).json({ message: "Cliente cadastrado com sucesso!" });
+      res.status(200).json({ message: "Produto cadastrado com sucesso!" });
 
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Erro ao cadastrar o cliente', error: error.message });
+      res.status(500).json({ message: 'Erro ao cadastrar o produto', error: error.message });
     }
   } else {
     res.status(405).json({ message: 'Método não permitido' });
