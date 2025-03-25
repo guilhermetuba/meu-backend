@@ -52,6 +52,7 @@ if (req.method === "POST") {
   } else {
     res.status(405).json({ message: 'Método não permitido' });
   }
+}
   
 // Função para autenticar com o Google Sheets API
 async function authenticate() {
