@@ -33,7 +33,7 @@ if (req.method === "POST") {
       const addRequest = {
         spreadsheetId: spreadsheetId,
         range: 'Estoque!A2', // A célula inicial da aba "Estoque"
-        valueInputOption: 'RAW',
+        valueInputOption: 'USER_ENTERED',
         resource: {
           values: [
             [codigo, produto, fornecedor, categoria, quantidade, precoCusto, precoVenda], // Linha de dados
