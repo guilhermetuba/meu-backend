@@ -17,7 +17,7 @@ if (req.method === "POST") {
       // Verificar se o código já existe na aba "Estoque"
       const request = {
         spreadsheetId: spreadsheetId,
-        range: 'Estoque!A2:A', // Coluna B contém os CPFs
+        range: 'Estoque!A2:A', // 
       };
 
       const response = await sheets.spreadsheets.values.get(request);
