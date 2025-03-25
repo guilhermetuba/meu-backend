@@ -24,8 +24,8 @@ if (req.method === "POST") {
       const codigosExistentes = response.data.values || [];
 
       // Verificar se o código já está cadastrado
-      const codigosExistentes = codigosExistentes.some(c => c[0] === codigo);
-      if (codigosExistente) {
+      const codigoExistente = codigosExistentes.some(c => c[0] === codigo);
+      if (codigoExistente) {
         return res.status(400).json({ message: "Código já cadastrado." });
       }
 
