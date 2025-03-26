@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
         const request = {
             spreadsheetId: spreadsheetId,
-            range: "Estoque!A2:C", // Ajuste o range conforme necessário
+            range: "Estoque!A2:G", // Ajuste o range conforme necessário
         };
 
         const response = await sheets.spreadsheets.values.get(request);
