@@ -27,7 +27,7 @@ export default async function handler(req, res) {
                 return res.status(200).json({
                     "Código": produtoEncontrado[0],
                     "Produto": produtoEncontrado[1],
-                    "Preço de Venda": produtoEncontrado[2]
+                    "Preço de Venda": produtoEncontrado[6]
                 });
             } else {
                 return res.status(404).json({ message: "Produto não encontrado." });
