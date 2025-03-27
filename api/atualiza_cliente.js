@@ -64,8 +64,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "PUT") {
-    try {
-      const { nome, cpf, telefone, email, endereco, observacoes } = req.body;
+        try {
+      const { cpf } = req.query; // De acordo com a URL, você deve obter o CPF da URL e não dos parâmetros de query
+      const { nome, telefone, email, endereco, observacoes } = req.body;
       const request = {
         spreadsheetId,
         range: 'Clientes!A2:F',
