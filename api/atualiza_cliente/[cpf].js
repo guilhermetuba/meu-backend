@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // Delete cliente
+ // Delete cliente
   if (req.method === "DELETE") {
     try {
       console.log("🔵 Iniciando exclusão do cliente com CPF:", cpf);
@@ -92,10 +92,11 @@ export default async function handler(req, res) {
       }
 
       console.log(`🗑️ Excluindo cliente na linha ${rowIndex + 2}...`);
-      // Remove o cliente da lista
+      // Remove o cliente da lista local
       clientes.splice(rowIndex, 1);
       console.log("📌 Lista de clientes após exclusão:", clientes);
 
+      // Agora precisamos reorganizar a planilha
       if (clientes.length > 0) {
         // Atualiza a planilha com os clientes restantes
         console.log("🔄 Atualizando planilha com os clientes restantes...");
@@ -106,7 +107,7 @@ export default async function handler(req, res) {
           resource: { values: clientes }
         });
       } else {
-        // Se não houver clientes restantes, limpa a planilha
+        // Se não houver clientes restantes, limpando a planilha
         console.log("📌 Nenhum cliente restante, limpando planilha...");
         await sheets.spreadsheets.values.clear({
           spreadsheetId,
