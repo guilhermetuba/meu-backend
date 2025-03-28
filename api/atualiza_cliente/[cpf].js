@@ -89,7 +89,7 @@ console.log(sheetInfo.data.sheets);
       if (rowIndex === -1) {
         return res.status(404).json({ message: "Cliente não encontrado." });
       }
-
+console.log("Tentando excluir o cliente:", cpf);
    // Remove a linha na planilha (usando batchUpdate)
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
