@@ -81,6 +81,10 @@ export default async function handler(req, res) {
       const response = await sheets.spreadsheets.values.get(request);
       const clientes = response.data.values || [];
       const rowIndex = clientes.findIndex(cliente => cliente[1] === cpf);
+      const sheetInfo = await sheets.spreadsheets.get({
+  spreadsheetId,
+});
+console.log(sheetInfo.data.sheets);
 
       if (rowIndex === -1) {
         return res.status(404).json({ message: "Cliente não encontrado." });
