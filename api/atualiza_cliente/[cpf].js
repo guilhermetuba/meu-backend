@@ -96,27 +96,18 @@ export default async function handler(req, res) {
       clientes.splice(rowIndex, 1);
       console.log("📌 Lista de clientes após exclusão:", clientes);
 
-      // Agora precisamos reorganizar a planilha sem a linha excluída
-      if (clientes.length > 0) {
-        // Atualiza a planilha com os clientes restantes, deslocando as linhas
-        console.log("🔄 Atualizando planilha com os clientes restantes...");
-        await sheets.spreadsheets.values.update({
-          spreadsheetId,
-          range: 'Clientes!A2:F',
-          valueInputOption: 'RAW',
-          resource: { values: clientes }
-        });
-      } else {
-        // Se não houver clientes restantes, limpando a planilha
-        console.log("📌 Nenhum cliente restante, limpando planilha...");
-        await sheets.spreadsheets.values.clear({
-          spreadsheetId,
-          range: 'Clientes!A2:F'
-        });
-      }
+      // Reescreve a planilha com as linhas reorganizadas
+      const range = 'Clientes!A2:F';  // Especifica o intervalo da planilha
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: range,
+        valueInputOption: 'RAW',
+        resource: { values: clientes }
+      });
 
       console.log("✅ Cliente excluído e planilha reorganizada com sucesso!");
       return res.status(200).json({ message: "Cliente excluído com sucesso." });
+
     } catch (error) {
       console.error("❌ Erro ao excluir cliente:", error);
       return res.status(500).json({ message: 'Erro ao excluir cliente', error: error.message });
