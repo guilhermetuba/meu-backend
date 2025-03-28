@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  console.log("🔵 Requisição recebida:", req.method, req.query);
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
