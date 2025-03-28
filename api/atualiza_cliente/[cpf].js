@@ -86,21 +86,26 @@ export default async function handler(req, res) {
         return res.status(404).json({ message: "Cliente não encontrado." });
       }
 
-      await sheets.spreadsheets.values.clear({
-        spreadsheetId,
-        range: `Clientes!A${rowIndex + 2}:F${rowIndex + 2}`
-      });
+      // Remove o cliente da lista de dados
+    clientes.splice(rowIndex, 1); 
+
+        // Limpa toda a tabela antes de reescrever os dados (evita sobras de linhas antigas)
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: 'Clientes!A2:F'
+    });
 
  // Após excluir, reorganizar a planilha removendo linhas vazias
     clientes = clientes.filter(row => row.some(cell => cell.trim() !== "")); // Remove linhas vazias
 
-    // Reescrevendo os dados sem as linhas vazias
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Clientes!A2:F',
-      valueInputOption: 'RAW',
-      resource: { values: clientes }
-    });
+       // Se ainda houver clientes, reescreve a lista atualizada
+    if (clientes.length > 0) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: 'Clientes!A2:F',
+        valueInputOption: 'RAW',
+        resource: { values: clientes }
+      });
       
       return res.status(200).json({ message: "Cliente excluído com sucesso." });
     } catch (error) {
