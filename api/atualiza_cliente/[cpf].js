@@ -79,12 +79,13 @@ export default async function handler(req, res) {
 
       const request = {
         spreadsheetId,
-        range: 'Clientes!A2:F',
+        range: 'Clientes!A2:F', // Alvo da nossa exclusão
       };
       const response = await sheets.spreadsheets.values.get(request);
       let clientes = response.data.values || [];
       console.log("📌 Lista de clientes antes da exclusão:", clientes);
 
+      // Encontra o índice da linha que corresponde ao CPF
       const rowIndex = clientes.findIndex(cliente => cliente[1] === cpf);
 
       if (rowIndex === -1) {
@@ -93,28 +94,19 @@ export default async function handler(req, res) {
 
       console.log(`🗑️ Excluindo cliente na linha ${rowIndex + 2}...`);
 
-      // Remover linha com batchUpdate
-      const requestBody = {
-        requests: [
-          {
-            deleteRange: {
-              range: {
-                sheetId: 0,  // Normalmente é a primeira aba, caso tenha outra aba, altere o ID
-                startRowIndex: rowIndex + 1,  // Ajuste baseado na indexação da planilha (começa do 0)
-                endRowIndex: rowIndex + 2,    // A linha a ser excluída
-              },
-              shiftDimension: 'ROWS',  // Desloca as linhas para preencher o "buraco"
-            }
-          }
-        ]
-      };
+      // Remove o cliente do array
+      clientes.splice(rowIndex, 1);
+      console.log("📌 Lista de clientes após exclusão:", clientes);
 
-      await sheets.spreadsheets.batchUpdate({
+      // Atualiza a planilha com os dados restantes
+      await sheets.spreadsheets.values.update({
         spreadsheetId,
-        resource: requestBody,
+        range: 'Clientes!A2:F',
+        valueInputOption: 'RAW',
+        resource: { values: clientes },
       });
 
-      console.log("✅ Cliente excluído e linha removida com sucesso!");
+      console.log("✅ Cliente excluído e planilha atualizada com sucesso!");
 
       return res.status(200).json({ message: "Cliente excluído com sucesso." });
 
@@ -126,7 +118,7 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ message: 'Método não permitido' });
 }
-
+  
 async function authenticate() {
   const { google } = require('googleapis');
   const oauth2Client = new google.auth.OAuth2(
