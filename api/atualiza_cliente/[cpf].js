@@ -91,6 +91,17 @@ export default async function handler(req, res) {
         range: `Clientes!A${rowIndex + 2}:F${rowIndex + 2}`
       });
 
+ // Após excluir, reorganizar a planilha removendo linhas vazias
+    clientes = clientes.filter(row => row.some(cell => cell.trim() !== "")); // Remove linhas vazias
+
+    // Reescrevendo os dados sem as linhas vazias
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Clientes!A2:F',
+      valueInputOption: 'RAW',
+      resource: { values: clientes }
+    });
+      
       return res.status(200).json({ message: "Cliente excluído com sucesso." });
     } catch (error) {
       console.error(error);
