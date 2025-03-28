@@ -96,9 +96,9 @@ export default async function handler(req, res) {
       clientes.splice(rowIndex, 1);
       console.log("📌 Lista de clientes após exclusão:", clientes);
 
-      // Agora precisamos reorganizar a planilha
+      // Agora precisamos reorganizar a planilha sem a linha excluída
       if (clientes.length > 0) {
-        // Atualiza a planilha com os clientes restantes
+        // Atualiza a planilha com os clientes restantes, deslocando as linhas
         console.log("🔄 Atualizando planilha com os clientes restantes...");
         await sheets.spreadsheets.values.update({
           spreadsheetId,
