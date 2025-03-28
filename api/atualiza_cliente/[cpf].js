@@ -109,7 +109,7 @@ console.log("Tentando excluir o cliente:", cpf);
       }
     });
 
-      
+      console.error("Erro de teste: verificando logs!");
       return res.status(200).json({ message: "Cliente excluído com sucesso." });
     } catch (error) {
       console.error(error);
