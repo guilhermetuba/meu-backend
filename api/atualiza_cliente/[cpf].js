@@ -75,6 +75,7 @@ export default async function handler(req, res) {
   // Delete cliente
   if (req.method === "DELETE") {
     try {
+      const { cpf } = req.query;
       console.log("🔵 Iniciando exclusão do cliente com CPF:", cpf);
       const request = {
         spreadsheetId,
