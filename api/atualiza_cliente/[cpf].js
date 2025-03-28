@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     }
   }
 
- // Delete cliente
+  // Delete cliente
   if (req.method === "DELETE") {
     try {
       console.log("🔵 Iniciando exclusão do cliente com CPF:", cpf);
@@ -92,20 +92,30 @@ export default async function handler(req, res) {
       }
 
       console.log(`🗑️ Excluindo cliente na linha ${rowIndex + 2}...`);
-      // Remove o cliente da lista local
-      clientes.splice(rowIndex, 1);
-      console.log("📌 Lista de clientes após exclusão:", clientes);
 
-      // Reescreve a planilha com as linhas reorganizadas
-      const range = 'Clientes!A2:F';  // Especifica o intervalo da planilha
-      await sheets.spreadsheets.values.update({
+      // Remover linha com batchUpdate
+      const requestBody = {
+        requests: [
+          {
+            deleteRange: {
+              range: {
+                sheetId: 0,  // Normalmente é a primeira aba, caso tenha outra aba, altere o ID
+                startRowIndex: rowIndex + 1,  // Ajuste baseado na indexação da planilha (começa do 0)
+                endRowIndex: rowIndex + 2,    // A linha a ser excluída
+              },
+              shiftDimension: 'ROWS',  // Desloca as linhas para preencher o "buraco"
+            }
+          }
+        ]
+      };
+
+      await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
-        range: range,
-        valueInputOption: 'RAW',
-        resource: { values: clientes }
+        resource: requestBody,
       });
 
-      console.log("✅ Cliente excluído e planilha reorganizada com sucesso!");
+      console.log("✅ Cliente excluído e linha removida com sucesso!");
+
       return res.status(200).json({ message: "Cliente excluído com sucesso." });
 
     } catch (error) {
