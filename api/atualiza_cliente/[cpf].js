@@ -72,44 +72,60 @@ export default async function handler(req, res) {
     }
   }
 
-  // Delete cliente
+   // DELETE: Excluir cliente e remover a linha da planilha
   if (req.method === "DELETE") {
     try {
       console.log("🔵 Iniciando exclusão do cliente com CPF:", cpf);
 
-      const request = {
+      // Obter os dados da aba "Clientes"
+      const getResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Clientes!A2:F', // Alvo da nossa exclusão
-      };
-      const response = await sheets.spreadsheets.values.get(request);
-      let clientes = response.data.values || [];
-      console.log("📌 Lista de clientes antes da exclusão:", clientes);
+        range: 'Clientes!A2:F',
+      });
+      const clientes = getResponse.data.values || [];
+      console.log("📌 Clientes antes da exclusão:", clientes);
 
-      // Encontra o índice da linha que corresponde ao CPF
+      // Encontrar o índice da linha com o CPF (considerando que CPF está na coluna B)
       const rowIndex = clientes.findIndex(cliente => cliente[1] === cpf);
-
       if (rowIndex === -1) {
         return res.status(404).json({ message: "Cliente não encontrado." });
       }
+      console.log(`🗑️ Cliente encontrado na linha ${rowIndex + 2}`);
 
-      console.log(`🗑️ Excluindo cliente na linha ${rowIndex + 2}...`);
+      // Obter o sheetId da aba "Clientes"
+      const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+      const sheet = spreadsheet.data.sheets.find(s => s.properties.title === "Clientes");
+      if (!sheet) {
+        return res.status(500).json({ message: "Aba 'Clientes' não encontrada." });
+      }
+      const sheetId = sheet.properties.sheetId;
+      console.log("🔍 sheetId:", sheetId);
 
-      // Remove o cliente do array
-      clientes.splice(rowIndex, 1);
-      console.log("📌 Lista de clientes após exclusão:", clientes);
-
-      // Atualiza a planilha com os dados restantes
-      await sheets.spreadsheets.values.update({
+      // Excluir a linha usando batchUpdate com deleteDimension.
+      // Atenção: se os dados começam na linha 2, então a primeira linha de dados tem índice 1.
+      await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
-        range: 'Clientes!A2:F',
-        valueInputOption: 'RAW',
-        resource: { values: clientes },
+        resource: {
+          requests: [
+            {
+              deleteDimension: {
+                range: {
+                  sheetId: sheetId,
+                  dimension: "ROWS",
+                  // rowIndex é zero-based para o intervalo de toda a planilha.
+                  // Se os dados começam na linha 2, então a linha 2 corresponde a índice 1.
+                  startIndex: rowIndex + 1,  
+                  endIndex: rowIndex + 2
+                }
+              }
+            }
+          ]
+        }
       });
 
-      console.log("✅ Cliente excluído e planilha atualizada com sucesso!");
-
-      return res.status(200).json({ message: "Cliente excluído com sucesso." });
-
+      console.log("✅ Cliente excluído e linha removida com sucesso!");
+      return res.status(200).json({ message: "Cliente excluído com sucesso e linha removida." });
+      
     } catch (error) {
       console.error("❌ Erro ao excluir cliente:", error);
       return res.status(500).json({ message: 'Erro ao excluir cliente', error: error.message });
