@@ -75,50 +75,48 @@ export default async function handler(req, res) {
   // Delete cliente
   if (req.method === "DELETE") {
     try {
+      console.log("🔵 Iniciando exclusão do cliente com CPF:", cpf);
       const request = {
         spreadsheetId,
         range: 'Clientes!A2:F',
       };
       const response = await sheets.spreadsheets.values.get(request);
-      const clientes = response.data.values || [];
+      let clientes = response.data.values || [];
+       console.log("📌 Lista de clientes antes da exclusão:", clientes);
       const rowIndex = clientes.findIndex(cliente => cliente[1] === cpf);
-      const sheetInfo = await sheets.spreadsheets.get({
-  spreadsheetId,
-});
-console.log(sheetInfo.data.sheets);
-
+       
       if (rowIndex === -1) {
         return res.status(404).json({ message: "Cliente não encontrado." });
       }
-console.log("Tentando excluir o cliente:", cpf);
-   // Remove a linha na planilha (usando batchUpdate)
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId,
-      resource: {
-        requests: [
-          {
-            deleteDimension: {
-              range: {
-                sheetId: 0, // ID da aba (pode ser necessário verificar)
-                dimension: "ROWS",
-                startIndex: rowIndex + 1, // Ajuste para índice correto (linha 2 na planilha)
-                endIndex: rowIndex + 2
-              }
-            }
-          }
-        ]
-      }
-    });
+      console.log(`🗑️ Excluindo cliente na linha ${rowIndex + 2}...`);
 
-      console.error("Erro de teste: verificando logs!");
-      return res.status(200).json({ message: "Cliente excluído com sucesso." });
+         // Após excluir, reorganizar a planilha removendo linhas vazias
+        clientes.splice(rowIndex, 1); // Remove a linha vazia da array
+     console.log("📌 Lista de clientes após exclusão:", clientes);
+      
+      if (clientes.length > 0) {
+            console.log("🔄 Atualizando planilha sem a linha vazia...");
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: 'Clientes!A2:F',
+                valueInputOption: 'RAW',
+                resource: { values: clientes }
+            });
+ } else {
+            console.log("📌 Nenhum cliente restante, limpando planilha...");
+            await sheets.spreadsheets.values.clear({
+                spreadsheetId,
+                range: 'Clientes!A2:F'
+            });
+        }
+
+        console.log("✅ Cliente excluído e planilha reorganizada com sucesso!");
+        return res.status(200).json({ message: "Cliente excluído com sucesso." });
+
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: 'Erro ao excluir cliente', error: error.message });
+        console.error("❌ Erro ao excluir cliente:", error);
+        return res.status(500).json({ message: 'Erro ao excluir cliente', error: error.message });
     }
-  }
-
-  return res.status(405).json({ message: 'Método não permitido' });
 }
 
 async function authenticate() {
