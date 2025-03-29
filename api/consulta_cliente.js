@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       // Buscar todos os clientes na aba "Clientes"
       const request = {
         spreadsheetId: spreadsheetId,
-        range: 'Clientes!A2:A', // Coluna A contém os nomes dos clientes
+        range: 'Clientes!A2:B', // Coluna A contém os nomes dos clientes
       };
 
       const response = await sheets.spreadsheets.values.get(request);
