@@ -90,9 +90,9 @@ export default async function handler(req, res) {
       console.log(`🗑️ Produto encontrado na linha ${rowIndex + 2}`);
 
       const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-      const sheet = spreadsheet.data.sheets.find(s => s.properties.title === "Produtos");
+      const sheet = spreadsheet.data.sheets.find(s => s.properties.title === "Estoque");
       if (!sheet) {
-        return res.status(500).json({ message: "Aba 'Produtos' não encontrada." });
+        return res.status(500).json({ message: "Aba 'Estoque' não encontrada." });
       }
       const sheetId = sheet.properties.sheetId;
       console.log("🔍 sheetId:", sheetId);
