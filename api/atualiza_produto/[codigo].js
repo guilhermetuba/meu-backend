@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         codigo: produtoEncontrado[0],
-        nome: produtoEncontrado[1],
+        produto: produtoEncontrado[1],
         fornecedor: produtoEncontrado[2],
         categoria: produtoEncontrado[3],
         quantidade: produtoEncontrado[4],
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
   // PUT: Atualizar produto
   if (req.method === "PUT") {
     try {
-      const { nome, fornecedor, categoria, quantidade, precoCusto, precoVenda } = req.body;
+      const { produto, fornecedor, categoria, quantidade, precoCusto, precoVenda } = req.body;
       const request = {
         spreadsheetId,
         range: 'Estoque!A2:G',
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         spreadsheetId,
         range: `Estoque!A${rowIndex + 2}:G${rowIndex + 2}`,
         valueInputOption: "RAW",
-        resource: { values: [[codigo, nome, fornecedor, categoria, quantidade, precoCusto, precoVenda]] }
+        resource: { values: [[codigo, produto, fornecedor, categoria, quantidade, precoCusto, precoVenda]] }
       });
 
       return res.status(200).json({ message: "Produto atualizado com sucesso." });
