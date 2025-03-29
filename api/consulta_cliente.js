@@ -7,36 +7,34 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+   // Get cliente
   if (req.method === "GET") {
     try {
-      const sheets = await authenticate();
-      const spreadsheetId = process.env.SPREADSHEET_ID; // ID da planilha
-
-      // Buscar todos os clientes na aba "Clientes"
       const request = {
-        spreadsheetId: spreadsheetId,
-        range: 'Clientes!A2:B', // Coluna A contém os nomes dos clientes
+        spreadsheetId,
+        range: 'Clientes!A2:F',
       };
-
       const response = await sheets.spreadsheets.values.get(request);
       const clientes = response.data.values || [];
 
-      // Verifica se encontrou clientes
-      if (clientes.length === 0) {
-        return res.status(404).json({ message: "Nenhum cliente encontrado." });
+      const clienteEncontrado = clientes.find(cliente => cliente[1] === cpf);
+      if (!clienteEncontrado) {
+        return res.status(404).json({ message: "Cliente não encontrado." });
       }
 
-      // Retorna a lista de nomes dos clientes
-      res.status(200).json({ clientes: clientes.map(cliente => cliente[0]) });
-
+      return res.status(200).json({
+        nome: clienteEncontrado[0],
+        cpf: clienteEncontrado[1],
+        telefone: clienteEncontrado[2],
+        email: clienteEncontrado[3],
+        endereco: clienteEncontrado[4],
+        observacoes: clienteEncontrado[5] || ""
+      });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Erro ao consultar clientes', error: error.message });
+      return res.status(500).json({ message: 'Erro ao consultar cliente', error: error.message });
     }
-  } else {
-    res.status(405).json({ message: 'Método não permitido' });
   }
-}
 
 // Função para autenticar com o Google Sheets API
 async function authenticate() {
