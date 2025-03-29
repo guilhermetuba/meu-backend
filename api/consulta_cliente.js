@@ -13,19 +13,35 @@ export default async function handler(req, res) {
 
         const request = {
             spreadsheetId: spreadsheetId,
-            range: "Clientes!A2:B", // Alterado para buscar Nome (A) e CPF (B)
+            range: "Clientes!A2:F", // Ajuste conforme as colunas da sua planilha
         };
 
         const response = await sheets.spreadsheets.values.get(request);
         const clientes = response.data.values || [];
 
-        // Formatar os dados como uma lista de objetos com nome e CPF
-        const clientesFormatados = clientes.map(cliente => ({
-            nome: cliente[0], // Nome do cliente
-            cpf: cliente[1]   // CPF do cliente
-        }));
+        // Se houver um CPF na query, buscar apenas esse cliente
+        const { cpf } = req.query;
+        if (cpf) {
+            const clienteEncontrado = clientes.find(c => c[1] === cpf); // CPF está na coluna B
+            if (clienteEncontrado) {
+                return res.status(200).json({
+                    nome: clienteEncontrado[0],
+                    cpf: clienteEncontrado[1],
+                    telefone: clienteEncontrado[2] || '',
+                    email: clienteEncontrado[3] || '',
+                    endereco: clienteEncontrado[4] || '',
+                    observacoes: clienteEncontrado[5] || '',
+                });
+            } else {
+                return res.status(404).json({ message: "Cliente não encontrado." });
+            }
+        }
 
-        res.status(200).json({ clientes: clientesFormatados });
+        // Retorna todos os clientes se nenhum CPF for passado
+        res.status(200).json({
+            clientes: clientes.map(c => ({ nome: c[0], cpf: c[1] }))
+        });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erro ao buscar clientes.", error: error.message });
