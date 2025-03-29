@@ -31,9 +31,9 @@ export default async function handler(req, res) {
         produto: produtoEncontrado[1],
         fornecedor: produtoEncontrado[2],
         categoria: produtoEncontrado[3],
-        quantidade: produtoEncontrado[4],
-        precoCusto: produtoEncontrado[5],
-        precoVenda: produtoEncontrado[6]
+        quantidade: produtoEncontrado[4] || "0",
+        precoCusto: produtoEncontrado[5] || "R$ 0,00",
+        precoVenda: produtoEncontrado[6] || "R$ 0,00"
       });
     } catch (error) {
       console.error(error);
