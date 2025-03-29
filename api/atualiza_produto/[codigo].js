@@ -115,8 +115,8 @@ export default async function handler(req, res) {
         }
       });
 
-      console.log("✅ Produto excluído e linha removida com sucesso!");
-      return res.status(200).json({ message: "Produto excluído com sucesso e linha removida." });
+      console.log("✅ Produto excluído com sucesso!");
+      return res.status(200).json({ message: "Produto excluído com sucesso!" });
       
     } catch (error) {
       console.error("❌ Erro ao excluir produto:", error);
