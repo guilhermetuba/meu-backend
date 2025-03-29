@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     try {
       const request = {
         spreadsheetId,
-        range: 'Produtos!A2:G',
+        range: 'Estoque!A2:G',
       };
       const response = await sheets.spreadsheets.values.get(request);
       const produtos = response.data.values || [];
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       const { nome, fornecedor, categoria, quantidade, precoCusto, precoVenda } = req.body;
       const request = {
         spreadsheetId,
-        range: 'Produtos!A2:G',
+        range: 'Estoque!A2:G',
       };
       const response = await sheets.spreadsheets.values.get(request);
       const produtos = response.data.values || [];
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
 
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Produtos!A${rowIndex + 2}:G${rowIndex + 2}`,
+        range: `Estoque!A${rowIndex + 2}:G${rowIndex + 2}`,
         valueInputOption: "RAW",
         resource: { values: [[codigo, nome, fornecedor, categoria, quantidade, precoCusto, precoVenda]] }
       });
@@ -78,7 +78,7 @@ export default async function handler(req, res) {
 
       const getResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Produtos!A2:G',
+        range: 'Estoque!A2:G',
       });
       const produtos = getResponse.data.values || [];
       console.log("📌 Produtos antes da exclusão:", produtos);
