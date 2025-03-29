@@ -124,7 +124,7 @@ export default async function handler(req, res) {
       });
 
       console.log("✅ Cliente excluído e linha removida com sucesso!");
-      return res.status(200).json({ message: "Cliente excluído com sucesso e linha removida." });
+      return res.status(200).json({ message: "Cliente excluído com sucesso!" });
       
     } catch (error) {
       console.error("❌ Erro ao excluir cliente:", error);
