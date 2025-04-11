@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       // Buscar último Código_Contas existente
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Contas a Receber!A2:A',
+        range: 'Contas a Receber!A2:A', // Coluna do Código_Contas
       });
 
       const codigosExistentes = response.data.values || [];
@@ -37,44 +37,32 @@ export default async function handler(req, res) {
       const proximoCodigo = ultimoCodigo + 1;
 
       let numParcelas = condicoes.toLowerCase().includes("vista") ? 1 : parseInt(condicoes);
-      
-      // Gerar os valores das parcelas somando exatamente o total
-      const parcelasValores = [];
-      let totalArredondado = 0;
+      const valorParcela = parseFloat((totalVenda / numParcelas).toFixed(2));
 
       for (let i = 0; i < numParcelas; i++) {
-        let valor;
-        if (i < numParcelas - 1) {
-          valor = Math.round((totalVenda / numParcelas) * 100) / 100;
-          totalArredondado += valor;
-        } else {
-          valor = Math.round((totalVenda - totalArredondado) * 100) / 100;
-        }
-        parcelasValores.push(valor);
-      }
+  const vencimento = calcularDataVencimento(dataVenda, dataPrimeiraParcela, i, condicoes);
+  const vencimentoFormatado = formatDate(vencimento);
 
-      for (let i = 0; i < numParcelas; i++) {
-        const vencimento = calcularDataVencimento(dataVenda, dataPrimeiraParcela, i, condicoes);
-        const vencimentoFormatado = formatDate(vencimento);
+  const descricaoParcela = condicoes.toLowerCase().includes("vista")
+    ? "À Vista"
+    : `${i + 1} de ${numParcelas}`;
 
-        const descricaoParcela = condicoes.toLowerCase().includes("vista")
-          ? "À Vista"
-          : `${i + 1} de ${numParcelas}`;
+  parcelas.push([
+    proximoCodigo + i,
+    codigoVenda,
+    cpfCliente,
+    dataVenda,
+    vencimentoFormatado,
+    formaPagamento,
+    descricaoParcela,
+    valorParcela,
+    "Em aberto",
+    ""
+  ]);
+}
 
-        parcelas.push([
-          proximoCodigo + i,
-          codigoVenda,
-          cpfCliente,
-          formatDate(new Date(dataVenda)),
-          vencimentoFormatado,
-          formaPagamento,
-          descricaoParcela,
-          parcelasValores[i],
-          "Em aberto",
-          ""
-        ]);
-      }
 
+      // Enviar para a planilha
       await sheets.spreadsheets.values.append({
         spreadsheetId,
         range: 'Contas a Receber!A2',
@@ -97,6 +85,7 @@ export default async function handler(req, res) {
   }
 }
 
+// Formata a data para dd/mm/yyyy
 function formatDate(date) {
   const dia = String(date.getDate()).padStart(2, '0');
   const mes = String(date.getMonth() + 1).padStart(2, '0');
@@ -104,9 +93,16 @@ function formatDate(date) {
   return `${dia}/${mes}/${ano}`;
 }
 
+// Converte string "dd/mm/yyyy" para objeto Date
+function parseDataBR(dataStr) {
+  const [dia, mes, ano] = dataStr.split("/").map(Number);
+  return new Date(ano, mes - 1, dia);
+}
+
+// Calcula vencimento com base na condição
 function calcularDataVencimento(dataVenda, dataPrimeiraParcela, index, condicoes) {
   if (condicoes.toLowerCase().includes("vista")) {
-    return new Date(dataVenda); // à vista = mesmo dia da venda
+    return parseDataBR(dataVenda); // Corrige inversão de dia/mês
   }
 
   const base = new Date(dataPrimeiraParcela);
@@ -115,6 +111,7 @@ function calcularDataVencimento(dataVenda, dataPrimeiraParcela, index, condicoes
   return vencimento;
 }
 
+// Autenticação Google Sheets
 async function authenticate() {
   const { google } = require('googleapis');
   const oauth2Client = new google.auth.OAuth2(
@@ -129,4 +126,5 @@ async function authenticate() {
   const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
   return sheets;
 }
+
 
