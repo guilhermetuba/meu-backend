@@ -42,45 +42,44 @@ export default async function handler(req, res) {
         return `${d}/${m}/${y}`;
       }
 
-      if (condicoes.toLowerCase() === 'à vista' || condicoes === '1x') {
-        // Pagamento à vista
-        const vencimentoFormatado = formatDate(vendaDate);
+     if (condicoes.toLowerCase() === 'à vista' || condicoes === '1x') {
+  const vencimentoFormatado = formatDate(vendaDate);
 
-        parcelas.push([
-          proximoCodigo,
-          codigoVenda,
-          cpfCliente,
-          dataVenda,
-          vencimentoFormatado,
-          formaPagamento,
-          "À Vista",
-          totalVenda.toFixed(2).replace('.', ','),
-          "Em aberto",
-          ""
-        ]);
-      } else {
-        const numParcelas = parseInt(condicoes);
-        const valorParcela = totalVenda / numParcelas;
+  parcelas.push([
+    proximoCodigo,
+    codigoVenda,
+    cpfCliente,
+    dataVenda,
+    vencimentoFormatado,
+    formaPagamento,
+    "À Vista",
+    totalVenda,
+    "Em aberto",
+    ""
+  ]);
+} else {
+  const numParcelas = parseInt(condicoes);
+  const valorParcela = totalVenda / numParcelas;
 
-        for (let i = 0; i < numParcelas; i++) {
-          const vencimento = new Date(vendaDate);
-          vencimento.setMonth(vencimento.getMonth() + i);
-          const vencimentoFormatado = formatDate(vencimento);
+  for (let i = 0; i < numParcelas; i++) {
+    const vencimento = new Date(vendaDate);
+    vencimento.setMonth(vencimento.getMonth() + i);
+    const vencimentoFormatado = formatDate(vencimento);
 
-          parcelas.push([
-            proximoCodigo + i,
-            codigoVenda,
-            cpfCliente,
-            dataVenda,
-            vencimentoFormatado,
-            formaPagamento,
-            `${i + 1} de ${numParcelas}`,
-            valorParcela.toFixed(2).replace('.', ','),
-            "Em aberto",
-            ""
-          ]);
-        }
-      }
+    parcelas.push([
+      proximoCodigo + i,
+      codigoVenda,
+      cpfCliente,
+      dataVenda,
+      vencimentoFormatado,
+      formaPagamento,
+      `${i + 1} de ${numParcelas}`,
+      valorParcela,
+      "Em aberto",
+      ""
+    ]);
+  }
+}
 
       // 3. Enviar para o Google Sheets
       await sheets.spreadsheets.values.append({
