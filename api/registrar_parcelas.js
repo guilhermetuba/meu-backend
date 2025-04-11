@@ -37,7 +37,21 @@ export default async function handler(req, res) {
       const proximoCodigo = ultimoCodigo + 1;
 
       let numParcelas = condicoes.toLowerCase().includes("vista") ? 1 : parseInt(condicoes);
-      const valorParcela = parseFloat((totalVenda / numParcelas).toFixed(2));
+      const parcelasValores = [];
+let totalArredondado = 0;
+
+// Define o valor base das parcelas
+for (let i = 0; i < numParcelas; i++) {
+  let valor;
+  if (i < numParcelas - 1) {
+    valor = Math.round((totalVenda / numParcelas) * 100) / 100;
+    totalArredondado += valor;
+  } else {
+    valor = Math.round((totalVenda - totalArredondado) * 100) / 100;
+  }
+  parcelasValores.push(valor);
+}
+
 
       for (let i = 0; i < numParcelas; i++) {
   const vencimento = calcularDataVencimento(dataVenda, dataPrimeiraParcela, i, condicoes);
@@ -55,7 +69,7 @@ export default async function handler(req, res) {
     vencimentoFormatado,
     formaPagamento,
     descricaoParcela,
-    valorParcela,
+    parcelasValores[i],
     "Em aberto",
     ""
   ]);
