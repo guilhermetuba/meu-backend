@@ -9,15 +9,23 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     try {
-      const { codigoVenda, cpfCliente, dataVenda, totalVenda, formaPagamento, condicoes } = req.body;
+      const {
+        codigoVenda,
+        cpfCliente,
+        dataVenda,
+        formaPagamento,
+        condicoes,
+        totalVenda,
+        dataPrimeiraParcela
+      } = req.body;
 
       const sheets = await authenticate();
       const spreadsheetId = process.env.SPREADSHEET_ID;
 
-      // 1. Obter o próximo código de contas
+      // Buscar último Código_Contas existente
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Contas a Receber!A2:A',
+        range: 'Contas a Receber!A2:A', // Coluna do Código_Contas
       });
 
       const codigosExistentes = response.data.values || [];
@@ -25,85 +33,74 @@ export default async function handler(req, res) {
         ? Math.max(...codigosExistentes.map(c => parseInt(c[0] || "0")).filter(n => !isNaN(n)))
         : 0;
 
+      const parcelas = [];
       const proximoCodigo = ultimoCodigo + 1;
 
-      // 2. Gerar parcelas
-      const parcelas = [];
+      let numParcelas = condicoes.toLowerCase().includes("vista") ? 1 : parseInt(condicoes);
+      const valorParcela = parseFloat((totalVenda / numParcelas).toFixed(2));
 
-      // Converte a dataVenda para objeto Date
-      const [dia, mes, ano] = dataVenda.split("/");
-      const vendaDate = new Date(`${ano}-${mes}-${dia}`);
+      for (let i = 0; i < numParcelas; i++) {
+        const vencimento = calcularDataVencimento(dataVenda, dataPrimeiraParcela, i, condicoes);
+        const vencimentoFormatado = formatDate(vencimento);
 
-      // Função para formatar a data em dd/mm/aaaa
-      function formatDate(date) {
-        const d = String(date.getDate()).padStart(2, '0');
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const y = date.getFullYear();
-        return `${d}/${m}/${y}`;
+        parcelas.push([
+          proximoCodigo + i,
+          codigoVenda,
+          cpfCliente,
+          dataVenda,
+          vencimentoFormatado,
+          formaPagamento,
+          numParcelas === 1 ? "À Vista" : `${i + 1} de ${numParcelas}`,
+          valorParcela,
+          "Em aberto",
+          ""
+        ]);
       }
 
-     if (condicoes.toLowerCase() === 'à vista' || condicoes === '1x') {
-  const vencimentoFormatado = formatDate(vendaDate);
-
-  parcelas.push([
-    proximoCodigo,
-    codigoVenda,
-    cpfCliente,
-    dataVenda,
-    vencimentoFormatado,
-    formaPagamento,
-    "À Vista",
-    totalVenda,
-    "Em aberto",
-    ""
-  ]);
-} else {
-  const numParcelas = parseInt(condicoes);
-  const valorParcela = totalVenda / numParcelas;
-
-  for (let i = 0; i < numParcelas; i++) {
-    const vencimento = new Date(vendaDate);
-    vencimento.setMonth(vencimento.getMonth() + i);
-    const vencimentoFormatado = formatDate(vencimento);
-
-    parcelas.push([
-      proximoCodigo + i,
-      codigoVenda,
-      cpfCliente,
-      dataVenda,
-      vencimentoFormatado,
-      formaPagamento,
-      `${i + 1} de ${numParcelas}`,
-      valorParcela,
-      "Em aberto",
-      ""
-    ]);
-  }
-}
-
-      // 3. Enviar para o Google Sheets
+      // Enviar para a planilha
       await sheets.spreadsheets.values.append({
         spreadsheetId,
         range: 'Contas a Receber!A2',
-        valueInputOption: 'RAW',
+        valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         resource: {
           values: parcelas
         }
       });
 
-      res.status(200).json({ message: 'Contas a receber registradas com sucesso!' });
+      res.status(200).json({ message: "Contas a receber registradas com sucesso!" });
 
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Erro ao registrar contas a receber', error: error.message });
     }
+
   } else {
     res.status(405).json({ message: 'Método não permitido' });
   }
 }
 
-// Função de autenticação
+// Formata a data para dd/mm/yyyy
+function formatDate(date) {
+  const dia = String(date.getDate()).padStart(2, '0');
+  const mes = String(date.getMonth() + 1).padStart(2, '0');
+  const ano = date.getFullYear();
+  return `${dia}/${mes}/${ano}`;
+}
+
+// Calcula vencimento
+function calcularDataVencimento(dataVenda, dataPrimeiraParcela, index, condicoes) {
+  if (condicoes.toLowerCase().includes("vista")) {
+    return new Date(dataVenda); // à vista = mesmo dia da venda
+  }
+
+  const base = new Date(dataPrimeiraParcela);
+  const vencimento = new Date(base);
+  vencimento.setMonth(vencimento.getMonth() + index);
+  return vencimento;
+}
+
+// Função de autenticação (sem mudanças)
 async function authenticate() {
   const { google } = require('googleapis');
   const oauth2Client = new google.auth.OAuth2(
