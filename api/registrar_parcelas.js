@@ -9,15 +9,15 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     try {
-      const { codigoVenda, cpfCliente, dataVenda, formaPagamento, condicoes, totalVenda } = req.body;
+      const { codigoVenda, cpfCliente, dataVenda, totalVenda, formaPagamento, condicoes } = req.body;
 
       const sheets = await authenticate();
       const spreadsheetId = process.env.SPREADSHEET_ID;
 
-      // Obter o último código de contas
+      // 1. Obter o próximo código de contas
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Contas a Receber!A2:A', // Coluna do Código_Contas
+        range: 'Contas a Receber!A2:A',
       });
 
       const codigosExistentes = response.data.values || [];
@@ -25,51 +25,75 @@ export default async function handler(req, res) {
         ? Math.max(...codigosExistentes.map(c => parseInt(c[0] || "0")).filter(n => !isNaN(n)))
         : 0;
 
-      const parcelas = condicoes.toLowerCase() === 'à vista' ? 1 : parseInt(condicoes);
-      const valorParcela = parseFloat((totalVenda / parcelas).toFixed(2));
-      const registros = [];
+      const proximoCodigo = ultimoCodigo + 1;
 
-      const vendaDate = new Date(dataVenda);
+      // 2. Gerar parcelas
+      const parcelas = [];
 
-      for (let i = 0; i < parcelas; i++) {
-        const codigoContas = ultimoCodigo + i + 1;
-        let dataVencimento = new Date(vendaDate);
-        if (condicoes.toLowerCase() === 'à vista') {
-          dataVencimento = vendaDate;
-        } else {
-          dataVencimento.setMonth(vendaDate.getMonth() + i + 1);
-        }
+      // Converte a dataVenda para objeto Date
+      const [dia, mes, ano] = dataVenda.split("/");
+      const vendaDate = new Date(`${ano}-${mes}-${dia}`);
 
-        const parcelaTexto = condicoes.toLowerCase() === 'à vista'
-          ? 'À Vista'
-          : `${i + 1} de ${parcelas}`;
+      // Função para formatar a data em dd/mm/aaaa
+      function formatDate(date) {
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear();
+        return `${d}/${m}/${y}`;
+      }
 
-        registros.push([
-          codigoContas,
+      if (condicoes.toLowerCase() === 'à vista' || condicoes === '1x') {
+        // Pagamento à vista
+        const vencimentoFormatado = formatDate(vendaDate);
+
+        parcelas.push([
+          proximoCodigo,
           codigoVenda,
           cpfCliente,
-          formatDate(vendaDate),
-          formatDate(dataVencimento),
+          dataVenda,
+          vencimentoFormatado,
           formaPagamento,
-          parcelaTexto,
-          valorParcela,
+          "À Vista",
+          totalVenda.toFixed(2).replace('.', ','),
           "Em aberto",
           ""
         ]);
+      } else {
+        const numParcelas = parseInt(condicoes);
+        const valorParcela = totalVenda / numParcelas;
+
+        for (let i = 0; i < numParcelas; i++) {
+          const vencimento = new Date(vendaDate);
+          vencimento.setMonth(vencimento.getMonth() + i);
+          const vencimentoFormatado = formatDate(vencimento);
+
+          parcelas.push([
+            proximoCodigo + i,
+            codigoVenda,
+            cpfCliente,
+            dataVenda,
+            vencimentoFormatado,
+            formaPagamento,
+            `${i + 1} de ${numParcelas}`,
+            valorParcela.toFixed(2).replace('.', ','),
+            "Em aberto",
+            ""
+          ]);
+        }
       }
 
-      // Enviar para o Google Sheets
+      // 3. Enviar para o Google Sheets
       await sheets.spreadsheets.values.append({
         spreadsheetId,
         range: 'Contas a Receber!A2',
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         resource: {
-          values: registros,
-        },
+          values: parcelas
+        }
       });
 
-      res.status(200).json({ message: "Contas a receber registradas com sucesso!" });
+      res.status(200).json({ message: 'Contas a receber registradas com sucesso!' });
 
     } catch (error) {
       console.error(error);
@@ -80,15 +104,7 @@ export default async function handler(req, res) {
   }
 }
 
-// Função auxiliar para formatar a data como DD/MM/AAAA
-function formatDate(date) {
-  const d = new Date(date);
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
-}
-
+// Função de autenticação
 async function authenticate() {
   const { google } = require('googleapis');
   const oauth2Client = new google.auth.OAuth2(
