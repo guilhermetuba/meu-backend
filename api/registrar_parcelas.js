@@ -39,23 +39,28 @@ export default async function handler(req, res) {
       let numParcelas = condicoes.toLowerCase().includes("vista") ? 1 : parseInt(condicoes);
       const valorParcela = parseFloat((totalVenda / numParcelas).toFixed(2));
 
-      for (let i = 0; i < numParcelas; i++) {
-        const vencimento = calcularDataVencimento(dataVenda, dataPrimeiraParcela, i, condicoes);
-        const vencimentoFormatado = formatDate(vencimento);
+     for (let i = 0; i < numParcelas; i++) {
+  const vencimento = calcularDataVencimento(dataVenda, dataPrimeiraParcela, i, condicoes);
+  const vencimentoFormatado = formatDate(vencimento);
 
-        parcelas.push([
-          proximoCodigo + i,
-          codigoVenda,
-          cpfCliente,
-          dataVenda,
-          vencimentoFormatado,
-          formaPagamento,
-          numParcelas === 1 ? "À Vista" : `${i + 1} de ${numParcelas}`,
-          valorParcela, // Enviado como número
-          "Em aberto",
-          ""
-        ]);
-      }
+  const descricaoParcela = condicoes.toLowerCase().includes("vista")
+    ? "À Vista"
+    : `${i + 1} de ${numParcelas}`;
+
+  parcelas.push([
+    proximoCodigo + i,
+    codigoVenda,
+    cpfCliente,
+    dataVenda,
+    vencimentoFormatado,
+    formaPagamento,
+    descricaoParcela,
+    valorParcela,
+    "Em aberto",
+    ""
+  ]);
+}
+
 
       // Enviar para a planilha
       await sheets.spreadsheets.values.append({
