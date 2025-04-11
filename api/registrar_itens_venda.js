@@ -10,6 +10,7 @@ export default async function handler(req, res) {
   if (req.method === "POST") {
     try {
       const { codigoVenda, cpfCliente, itens } = req.body;
+
       const sheets = await authenticate();
       const spreadsheetId = process.env.SPREADSHEET_ID;
 
@@ -18,63 +19,66 @@ export default async function handler(req, res) {
         spreadsheetId,
         range: "Itens da Venda!A2:A",
       };
+
       const response = await sheets.spreadsheets.values.get(readRequest);
       const linhasExistentes = response.data.values || [];
       let proximoCodigo = linhasExistentes.length + 1;
 
-      // Montar os dados para inserção
-      const linhasParaInserir = itens.map(item => {
-        return [
+      // Montar os dados para inserção e atualizar estoque
+      const linhasParaInserir = [];
+
+      for (const item of itens) {
+        linhasParaInserir.push([
           proximoCodigo++,
           codigoVenda,
           cpfCliente,
           item.codigoProduto,
           item.quantidade,
           Number(item.preco),
-          Number(item.subtotal),
-        ];
-      });
+          Number(item.subtotal)
+        ]);
 
-      await sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range: "Itens da Venda!A2",
-        valueInputOption: "USER_ENTERED",
-        resource: { values: linhasParaInserir },
-      });
+        // Atualizar a quantidade na aba Estoque
+        const estoque = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: "Estoque!A2:E"
+        });
 
-      // Atualizar o estoque com base nos itens vendidos
-      const estoqueResponse = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: 'Estoque!A2:F',
-      });
+        const estoqueData = estoque.data.values || [];
+        const indexProduto = estoqueData.findIndex(l => l[0] === item.codigoProduto);
 
-      const estoque = estoqueResponse.data.values || [];
-
-      for (const item of itens) {
-        const linhaEstoque = estoque.findIndex(p => p[0] === item.codigoProduto);
-        if (linhaEstoque !== -1) {
-          const linhaPlanilha = linhaEstoque + 2; // A2 começa na linha 2
-          const quantidadeAtual = parseFloat(estoque[linhaEstoque][5] || "0");
+        if (indexProduto !== -1) {
+          const quantidadeAtual = parseInt(estoqueData[indexProduto][4]);
           const novaQuantidade = quantidadeAtual - item.quantidade;
 
           await sheets.spreadsheets.values.update({
             spreadsheetId,
-            range: `Estoque!F${linhaPlanilha}`,
-            valueInputOption: 'USER_ENTERED',
+            range: `Estoque!E${indexProduto + 2}`,
+            valueInputOption: "USER_ENTERED",
             resource: {
-              values: [[novaQuantidade]],
-            },
+              values: [[novaQuantidade]]
+            }
           });
         }
       }
 
-      res.status(200).json({ message: "Itens da venda registrados e estoque atualizado com sucesso!" });
+      const appendRequest = {
+        spreadsheetId,
+        range: "Itens da Venda!A2",
+        valueInputOption: "USER_ENTERED",
+        resource: {
+          values: linhasParaInserir,
+        },
+      };
+
+      await sheets.spreadsheets.values.append(appendRequest);
+
+      res.status(200).json({ message: "Itens da venda registrados com sucesso!" });
 
     } catch (error) {
       console.error("Erro ao registrar itens da venda:", error);
       res.status(500).json({ message: "Erro ao registrar itens da venda", error: error.message });
     }
-
   } else {
     res.status(405).json({ message: "Método não permitido" });
   }
@@ -87,9 +91,11 @@ async function authenticate() {
     process.env.GOOGLE_CLIENT_SECRET,
     process.env.GOOGLE_REDIRECT_URI
   );
+
   oauth2Client.setCredentials({
     refresh_token: process.env.REFRESH_TOKEN,
   });
+
   const sheets = google.sheets({ version: "v4", auth: oauth2Client });
   return sheets;
 }
