@@ -51,7 +51,7 @@ export default async function handler(req, res) {
           vencimentoFormatado,
           formaPagamento,
           numParcelas === 1 ? "À Vista" : `${i + 1} de ${numParcelas}`,
-          valorParcela,
+          valorParcela, // Enviado como número
           "Em aberto",
           ""
         ]);
@@ -88,10 +88,16 @@ function formatDate(date) {
   return `${dia}/${mes}/${ano}`;
 }
 
-// Calcula vencimento
+// Converte string "dd/mm/yyyy" para objeto Date
+function parseDataBR(dataStr) {
+  const [dia, mes, ano] = dataStr.split("/").map(Number);
+  return new Date(ano, mes - 1, dia);
+}
+
+// Calcula vencimento com base na condição
 function calcularDataVencimento(dataVenda, dataPrimeiraParcela, index, condicoes) {
   if (condicoes.toLowerCase().includes("vista")) {
-    return new Date(dataVenda); // à vista = mesmo dia da venda
+    return parseDataBR(dataVenda); // Corrige inversão de dia/mês
   }
 
   const base = new Date(dataPrimeiraParcela);
@@ -100,7 +106,7 @@ function calcularDataVencimento(dataVenda, dataPrimeiraParcela, index, condicoes
   return vencimento;
 }
 
-// Função de autenticação (sem mudanças)
+// Autenticação Google Sheets
 async function authenticate() {
   const { google } = require('googleapis');
   const oauth2Client = new google.auth.OAuth2(
