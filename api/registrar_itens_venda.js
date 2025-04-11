@@ -25,17 +25,18 @@ export default async function handler(req, res) {
       let proximoCodigo = linhasExistentes.length + 1;
 
       // Montar os dados para inserção
-      const linhasParaInserir = itens.map(item => {
-        return [
-          proximoCodigo++,               // Codigo_item_venda
-          codigoVenda,                   // Codigo_Venda
-          cpfCliente,                    // CPF_Cliente
-          item.codigoProduto,            // Codigo_Produto
-          item.quantidade,               // Quantidade
-          item.preco.toFixed(2),         // Preço unitário
-          item.subtotal.toFixed(2),      // Subtotal
-        ];
-      });
+     const linhasParaInserir = itens.map(item => {
+  return [
+    proximoCodigo++,               // Codigo_item_venda
+    codigoVenda,                   // Codigo_Venda
+    cpfCliente,                    // CPF_Cliente
+    item.codigoProduto,            // Codigo_Produto
+    item.quantidade,               // Quantidade
+    parseFloat(item.preco.toFixed(2)),    // Preço unitário (como número)
+    parseFloat(item.subtotal.toFixed(2)), // Subtotal (como número)
+  ];
+});
+
 
       const appendRequest = {
         spreadsheetId,
