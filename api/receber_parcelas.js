@@ -8,17 +8,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "CPF não informado" });
   }
 
-  try {
-    const auth = await authorize();
-    const sheets = google.sheets({ version: 'v4', auth });
+    try {
+        const sheets = await authenticate();
+        const spreadsheetId = process.env.SPREADSHEET_ID;
 
-    const sheetName = 'Contas a Receber';
-    const range = `${sheetName}!A2:J`; // ajuste conforme o número de colunas
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.SHEET_ID, // configure no .env
-      range,
-    });
+        const request = {
+            spreadsheetId: spreadsheetId,
+            range: "Contas a Receber!A2:J", // Ajuste conforme as colunas da sua planilha
+        };
 
     const rows = response.data.values;
     if (!rows || rows.length === 0) {
