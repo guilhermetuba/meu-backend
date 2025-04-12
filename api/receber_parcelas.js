@@ -23,12 +23,12 @@ export default async function handler(req, res) {
 
     // Índices: A=0 CPF, C=2 Data Venda, D=3 Data Venc, E=4 Parcela, F=5 Valor, G=6 Status
     const parcelas = rows
-      .filter(row => row[0] === cpf && row[6]?.toLowerCase() === "em aberto")
+      .filter(row => row[2] === cpf && row[8]?.toLowerCase() === "em aberto")
       .map(row => ({
-        data_venda: row[2],
-        data_vencimento: row[3],
-        parcela: row[4],
-        valor: row[5],
+        data_venda: row[3],
+        data_vencimento: row[4],
+        parcela: row[6],
+        valor: row[7],
       }));
 
     return res.status(200).json({ parcelas });
