@@ -41,7 +41,7 @@ rows.forEach(row => {
         data_venda: row[3],
         data_vencimento: row[4],
         parcela: row[6],
-        valor: row[7],
+        valor: parseFloat(row[7]?.toString().replace(",", ".")),
       }));
 
     return res.status(200).json({ parcelas });
