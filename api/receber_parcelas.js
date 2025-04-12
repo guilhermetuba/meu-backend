@@ -24,7 +24,10 @@ export default async function handler(req, res) {
 
     const response = await sheets.spreadsheets.values.get(request);
     const rows = response.data.values;
-    console.log("Dados obtidos do Google Sheets:", rows);
+    console.log("Linhas encontradas:", rows.length);
+rows.forEach(row => {
+  console.log("Linha:", row[0], "| Status:", row[8]);
+});
 
 
     if (!rows || rows.length === 0) {
