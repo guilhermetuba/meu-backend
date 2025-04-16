@@ -68,7 +68,8 @@ if (req.method === "POST") {
       return res.status(404).json({ error: "Código da conta não encontrado." });
     }
 
-    const updateRange = `Contas a Receber!H${rowIndex + 2}:J${rowIndex + 2}`; // Colunas H, I e J
+        // Colunas I (Status), J (Data Pagamento), K (Observações)
+    const updateRange = `Contas a Receber!I${rowIndex + 2}:K${rowIndex + 2}`;
 
     await sheets.spreadsheets.values.update({
       spreadsheetId,
