@@ -45,52 +45,51 @@ module.exports = async function handler(req, res) {
     }
   }
 
- // NOVA LÓGICA PARA REGISTRAR PAGAMENTO
-if (req.method === "POST") {
-  const { codigo_contas, data_pagamento, status, observacoes } = req.body;
+  // NOVA LÓGICA PARA REGISTRAR PAGAMENTO
+  if (req.method === "POST") {
+    const { codigo_contas, data_pagamento, status, observacoes } = req.body;
 
-  if (!codigo_contas || !data_pagamento || !status) {
-    return res.status(400).json({ error: "Dados incompletos para registrar o pagamento." });
-  }
-
-  try {
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: "Contas a Receber!A2:K", // Garante que pega a coluna A (código) até a K
-    });
-
-    const rows = response.data.values;
-
-    // Busca o índice da linha onde o código está na coluna A (índice 0)
-    const rowIndex = rows.findIndex(row => row[0] === codigo_contas);
-
-    if (rowIndex === -1) {
-      return res.status(404).json({ error: "Código da conta não encontrado." });
+    if (!codigo_contas || !data_pagamento || !status) {
+      return res.status(400).json({ error: "Dados incompletos para registrar o pagamento." });
     }
 
-        // Colunas I (Status), J (Data Pagamento), K (Observações)
-    const updateRange = `Contas a Receber!I${rowIndex + 2}:K${rowIndex + 2}`;
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "Contas a Receber!A2:K", // Garante que pega a coluna A (código) até a K
+      });
 
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: updateRange,
-      valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [[data_pagamento, status, observacoes]],
-      },
-    });
+      const rows = response.data.values;
 
-    return res.status(200).json({ sucesso: true });
+      // Busca o índice da linha onde o código está na coluna A (índice 0)
+      const rowIndex = rows.findIndex(row => row[0] === codigo_contas);
 
-  } catch (error) {
-    console.error("Erro ao registrar pagamento:", error);
-    return res.status(500).json({ error: "Erro ao registrar pagamento" });
+      if (rowIndex === -1) {
+        return res.status(404).json({ error: "Código da conta não encontrado." });
+      }
+
+      // Colunas I (Status), J (Data Pagamento), K (Observações)
+      const updateRange = `Contas a Receber!I${rowIndex + 2}:K${rowIndex + 2}`;
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: updateRange,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[data_pagamento, status, observacoes]],
+        },
+      });
+
+      return res.status(200).json({ sucesso: true });
+
+    } catch (error) {
+      console.error("Erro ao registrar pagamento:", error);
+      return res.status(500).json({ error: "Erro ao registrar pagamento" });
+    }
   }
-}
- }
-}
+};  // Essa chave fecha o module.exports corretamente
 
-
+// Função de autenticação
 async function authenticate() {
   const { google } = require("googleapis");
   const oauth2Client = new google.auth.OAuth2(
@@ -106,3 +105,4 @@ async function authenticate() {
   const sheets = google.sheets({ version: "v4", auth: oauth2Client });
   return sheets;
 }
+
