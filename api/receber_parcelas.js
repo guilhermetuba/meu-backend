@@ -30,6 +30,7 @@ export default async function handler(req, res) {
       const parcelas = rows
         .filter(row => row[2] === cpf && row[8]?.toLowerCase() === "em aberto")
         .map(row => ({
+          codigo_parcela: row[0],
           data_venda: row[3],
           data_vencimento: row[4],
           parcela: row[6],
