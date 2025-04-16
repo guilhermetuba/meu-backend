@@ -48,8 +48,9 @@ module.exports = async function handler(req, res) {
   // NOVA LÓGICA PARA REGISTRAR PAGAMENTO
   if (req.method === "POST") {
     const { codigo_contas, data_pagamento, status, observacoes } = req.body;
-
+console.log(req.body); // Log dos dados recebidos no backend
     if (!codigo_contas || !data_pagamento || !status) {
+        console.error("Dados incompletos:", req.body); // Log de erro com os dados incompletos
       return res.status(400).json({ error: "Dados incompletos para registrar o pagamento." });
     }
 
