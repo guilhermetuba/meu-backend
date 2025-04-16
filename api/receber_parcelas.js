@@ -86,6 +86,8 @@ if (req.method === "POST") {
     return res.status(500).json({ error: "Erro ao registrar pagamento" });
   }
 }
+ }
+}
 
 
 async function authenticate() {
