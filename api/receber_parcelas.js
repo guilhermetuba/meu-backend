@@ -71,13 +71,13 @@ console.log(req.body); // Log dos dados recebidos no backend
 
       // Colunas I (Status), J (Data Pagamento), K (Observações)
       const updateRange = `Contas a Receber!I${rowIndex + 2}:K${rowIndex + 2}`;
-
+      const dataFormatada = formatarData(data_pagamento);
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range: updateRange,
         valueInputOption: "USER_ENTERED",
         requestBody: {
-          values: [[status,data_pagamento,observacoes]],
+          values: [[status,data_formatada,observacoes]],
         },
       });
 
@@ -89,6 +89,12 @@ console.log(req.body); // Log dos dados recebidos no backend
     }
   }
 };  // Essa chave fecha o module.exports corretamente
+
+// Função para formatar a data
+function formatarData(data) {
+  const [ano, mes, dia] = data.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
 
 // Função de autenticação
 async function authenticate() {
