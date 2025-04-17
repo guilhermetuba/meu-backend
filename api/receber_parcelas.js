@@ -47,9 +47,9 @@ module.exports = async function handler(req, res) {
 
   // NOVA LÓGICA PARA REGISTRAR PAGAMENTO
   if (req.method === "POST") {
-    const { codigo_contas, data_pagamento, status, observacoes } = req.body;
+    const { id_parcela, data_pagamento, status, observacoes } = req.body;
 console.log(req.body); // Log dos dados recebidos no backend
-    if (!codigo_contas || !data_pagamento || !status) {
+    if (!id_parcela || !data_pagamento || !status) {
         console.error("Dados incompletos:", req.body); // Log de erro com os dados incompletos
       return res.status(400).json({ error: "Dados incompletos para registrar o pagamento." });
     }
@@ -63,7 +63,7 @@ console.log(req.body); // Log dos dados recebidos no backend
       const rows = response.data.values;
 
       // Busca o índice da linha onde o código está na coluna A (índice 0)
-      const rowIndex = rows.findIndex(row => row[0] === codigo_contas);
+      const rowIndex = rows.findIndex(row => row[0] === id_parcela);
 
       if (rowIndex === -1) {
         return res.status(404).json({ error: "Código da conta não encontrado." });
