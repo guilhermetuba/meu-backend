@@ -77,7 +77,7 @@ console.log(req.body); // Log dos dados recebidos no backend
         range: updateRange,
         valueInputOption: "USER_ENTERED",
         requestBody: {
-          values: [[status,data_formatada,observacoes]],
+          values: [[status,data_Formatada,observacoes]],
         },
       });
 
