@@ -71,7 +71,7 @@ console.log(req.body); // Log dos dados recebidos no backend
 
       // Colunas I (Status), J (Data Pagamento), K (Observações)
       const updateRange = `Contas a Receber!I${rowIndex + 2}:K${rowIndex + 2}`;
-      const dataFormatada = formatarData(data_pagamento);
+      const data_Formatada = formatarData(data_pagamento);
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range: updateRange,
