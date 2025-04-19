@@ -1,4 +1,4 @@
-const authenticate = require('../utils/auth');
+const authenticate = require('../../utils/auth');
 
 export default async function handler(req, res) {
   console.log("🔵 Requisição recebida:", req.method, req.query);
