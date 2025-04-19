@@ -43,7 +43,7 @@ module.exports = async function handler(req, res) {
       // Atualiza o valor recebido e observações
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Contas a Receber!H${linhaPlanilha}:I${linhaPlanilha}`,
+        range: `Contas a Receber!H${linhaPlanilha},J${linhaPlanilha}`,
         valueInputOption: 'USER_ENTERED',
         resource: {
           values: [[novo_valor, novoTextoObs]]
