@@ -40,15 +40,25 @@ module.exports = async function handler(req, res) {
         ? `${obsAntiga} | ${observacoes}`
         : observacoes;
 
-      // Atualiza o valor recebido e observações
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `Contas a Receber!H${linhaPlanilha},J${linhaPlanilha}`,
-        valueInputOption: 'USER_ENTERED',
-        resource: {
-          values: [[novo_valor, novoTextoObs]]
-        }
-      });
+  // Atualiza o valor recebido (coluna H)
+await sheets.spreadsheets.values.update({
+  spreadsheetId,
+  range: `Contas a Receber!H${linhaPlanilha}`,
+  valueInputOption: 'USER_ENTERED',
+  resource: {
+    values: [[novo_valor]]
+  }
+});
+
+// Atualiza observações (coluna J)
+await sheets.spreadsheets.values.update({
+  spreadsheetId,
+  range: `Contas a Receber!J${linhaPlanilha}`,
+  valueInputOption: 'USER_ENTERED',
+  resource: {
+    values: [[novoTextoObs]]
+  }
+});
 
       res.status(200).json({ sucesso: true });
     } catch (error) {
