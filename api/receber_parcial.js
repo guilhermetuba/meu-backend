@@ -32,9 +32,9 @@ module.exports = async function handler(req, res) {
 
       const linhaPlanilha = rowIndex + 2; // porque começa em A2
 
-      // Coluna H = valor recebido (índice 7), Coluna I = observações (índice 8)
+      // Coluna H = valor recebido (índice 7), Coluna K = observações (índice 10)
       const valorAntigo = rows[rowIndex][7] || '';
-      const obsAntiga = rows[rowIndex][8] || '';
+      const obsAntiga = rows[rowIndex][10] || '';
 
       const novoTextoObs = obsAntiga
         ? `${obsAntiga} | ${observacoes}`
@@ -50,10 +50,10 @@ await sheets.spreadsheets.values.update({
   }
 });
 
-// Atualiza observações (coluna J)
+// Atualiza observações (coluna K)
 await sheets.spreadsheets.values.update({
   spreadsheetId,
-  range: `Contas a Receber!J${linhaPlanilha}`,
+  range: `Contas a Receber!K${linhaPlanilha}`,
   valueInputOption: 'USER_ENTERED',
   resource: {
     values: [[novoTextoObs]]
