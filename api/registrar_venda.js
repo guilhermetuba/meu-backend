@@ -1,3 +1,5 @@
+const authenticate = require('./auth'); // Importa a função de autenticação
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
@@ -51,20 +53,3 @@ export default async function handler(req, res) {
     res.status(405).json({ message: 'Método não permitido' });
   }
 }
-
-// Função de autenticação
-async function authenticate() {
-  const { google } = require('googleapis');
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
-  );
-  oauth2Client.setCredentials({
-    refresh_token: process.env.REFRESH_TOKEN,
-  });
-
-  const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
-  return sheets;
-}
-
