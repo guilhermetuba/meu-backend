@@ -16,45 +16,37 @@ module.exports = async function handler(req, res) {
   if (req.method === "POST") {
     const { id_parcela, novo_valor, observacoes, data_pagamento } = req.body;
 
-    try {
-      // Buscar a linha com o id_parcela
-      const resultado = await sheets.spreadsheets.values.get({
-        spreadsheetId: spreadsheetId,
-        range: `Contas a Receber!A2:A`, // Procurar na coluna A (id_parcela)
+ try {
+      // 1. Lê todos os dados da aba Contas a Receber
+      const readResult = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "Contas a Receber!A2:K",
       });
 
-      const rows = resultado.data.values;
-      let linhaEncontrada = -1;
+      const rows = readResult.data.values || [];
+      const rowIndex = rows.findIndex(row => row[0] === id_parcela); // coluna A
 
-      // Procurando o id_parcela na coluna A
-      for (let i = 0; i < rows.length; i++) {
-        if (rows[i][0] === id_parcela) {
-          linhaEncontrada = i + 2; // Adiciona 2 porque a pesquisa começa na linha 2
-          break;
-        }
+      if (rowIndex === -1) {
+        return res.status(404).json({ sucesso: false, erro: "Parcela não encontrada." });
       }
 
-      if (linhaEncontrada === -1) {
-        return res.status(404).json({ sucesso: false, erro: "Parcela não encontrada" });
-      }
+      const linhaPlanilha = rowIndex + 2; // porque começa em A2
 
-      // Atualizar o valor na coluna H e as observações na coluna K
+      // Coluna H = valor recebido (índice 7), Coluna I = observações (índice 8)
+      const valorAntigo = rows[rowIndex][7] || '';
+      const obsAntiga = rows[rowIndex][8] || '';
+
+      const novoTextoObs = obsAntiga
+        ? `${obsAntiga} | ${observacoes}`
+        : observacoes;
+
+      // Atualiza o valor recebido e observações
       await sheets.spreadsheets.values.update({
-        spreadsheetId: spreadsheetId,
-        range: `Contas a Receber!H${linhaEncontrada}:H${linhaEncontrada}`, // Coluna H
+        spreadsheetId,
+        range: `Contas a Receber!H${linhaPlanilha}:I${linhaPlanilha}`,
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [[novo_valor]], // Atualiza o valor da parcela
-        }
-      });
-
-      // Atualizar o campo de observações na coluna K
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: spreadsheetId,
-        range: `Contas a Receber!K${linhaEncontrada}:K${linhaEncontrada}`, // Coluna K
-        valueInputOption: 'USER_ENTERED',
-        resource: {
-          values: [[observacoes]], // Adiciona as observações
+          values: [[novo_valor, novoTextoObs]]
         }
       });
 
