@@ -74,14 +74,29 @@ console.log(req.body); // Log dos dados recebidos no backend
       // Colunas I (Status), J (Data Pagamento), K (Observações)
       const updateRange = `Contas a Receber!I${rowIndex + 2}:K${rowIndex + 2}`;
       const data_Formatada = formatarData(data_pagamento);
+            const linhaPlanilha = rowIndex + 2;
+      const obsAntiga = rows[rowIndex][10] || ''; // Coluna K
+
+      let novaObs = obsAntiga.trim();
+
+      // Se observações do formulário existirem, adiciona com separador
+      if (observacoes && observacoes.trim() !== '') {
+        novaObs = novaObs
+          ? `${novaObs} | Obs: ${observacoes.trim()}`
+          : `Obs: ${observacoes.trim()}`;
+      }
+
+      // Atualiza status, data pagamento e nova observação
+      const updateRange = `Contas a Receber!I${linhaPlanilha}:K${linhaPlanilha}`;
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range: updateRange,
         valueInputOption: "USER_ENTERED",
         requestBody: {
-          values: [[status,data_Formatada,observacoes]],
+          values: [[status, data_Formatada, novaObs]],
         },
       });
+
 
       return res.status(200).json({ sucesso: true });
 
