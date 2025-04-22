@@ -31,17 +31,18 @@ module.exports = async function handler(req, res) {
       const linhaPlanilha = rowIndex + 2;
 
       const obsAntiga = rows[rowIndex][10] || '';    // Coluna K (índice 10)
-
-      const textoOriginal = `Valor original: R$ ${parcela_original}`;
       let novaObs = obsAntiga.trim();
 
-      // Garante que não duplica a parte "Valor original"
-      if (!novaObs.startsWith(textoOriginal)) {
-        novaObs = `${textoOriginal} | ${novaObs}`;
+      // ✅ Só adiciona valor original se ainda não houver nenhum registrado
+      if (!/Valor original: R\$/.test(novaObs)) {
+        novaObs = `Valor original: R$ ${parseFloat(parcela_original).toFixed(2).replace('.', ',')} | ${novaObs}`;
       }
 
+      // Formata a data de pagamento
       const dataFormatada = formatarData(data_pagamento);
-      novaObs += ` | Pago R$ ${valor_recebido} no dia ${dataFormatada}.`;
+
+      // ✅ Adiciona o novo pagamento
+      novaObs += ` | Pago R$ ${parseFloat(valor_recebido).toFixed(2).replace('.', ',')} no dia ${dataFormatada}.`;
 
       // Atualiza o valor recebido (coluna H)
       await sheets.spreadsheets.values.update({
@@ -76,5 +77,6 @@ function formatarData(data) {
   const [ano, mes, dia] = data.split('-');
   return `${dia}/${mes}/${ano}`;
 }
+
 
 
