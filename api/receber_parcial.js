@@ -30,19 +30,27 @@ module.exports = async function handler(req, res) {
 
       const linhaPlanilha = rowIndex + 2;
 
-      const obsAntiga = rows[rowIndex][10] || '';    // Coluna K (índice 10)
+      const obsAntiga = rows[rowIndex][10] || ''; // Coluna K
       let novaObs = obsAntiga.trim();
 
-      // ✅ Só adiciona valor original se ainda não houver nenhum registrado
+      const valorOriginalTexto = `Valor original: R$ ${parseFloat(parcela_original).toFixed(2).replace('.', ',')}`;
+
+      // Adiciona o valor original apenas se não estiver presente
       if (!/Valor original: R\$/.test(novaObs)) {
-        novaObs = `Valor original: R$ ${parseFloat(parcela_original).toFixed(2).replace('.', ',')} | ${novaObs}`;
+        novaObs = `${valorOriginalTexto} | ${novaObs}`;
       }
 
-      // Formata a data de pagamento
-      const dataFormatada = formatarData(data_pagamento);
+      // Adiciona observações do formulário, se houver
+      let observacaoExtra = '';
+      if (observacoes && observacoes.trim() !== '') {
+        observacaoExtra = `Obs: ${observacoes.trim()} | `;
+      }
 
-      // ✅ Adiciona o novo pagamento
-      novaObs += ` | Pago R$ ${parseFloat(valor_recebido).toFixed(2).replace('.', ',')} no dia ${dataFormatada}.`;
+      const dataFormatada = formatarData(data_pagamento);
+      const pagamentoTexto = `Pago R$ ${parseFloat(valor_recebido).toFixed(2).replace('.', ',')} no dia ${dataFormatada}.`;
+
+      // Concatena tudo
+      novaObs += ` | ${pagamentoTexto}${observacaoExtra}`;
 
       // Atualiza o valor recebido (coluna H)
       await sheets.spreadsheets.values.update({
@@ -77,6 +85,7 @@ function formatarData(data) {
   const [ano, mes, dia] = data.split('-');
   return `${dia}/${mes}/${ano}`;
 }
+
 
 
 
