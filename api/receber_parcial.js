@@ -13,7 +13,7 @@ module.exports = async function handler(req, res) {
   const spreadsheetId = process.env.SPREADSHEET_ID;
 
   if (req.method === "POST") {
-    const { id_parcela, novo_valor, parcela_original, data_pagamento } = req.body;
+    const { id_parcela, parcela_original, novo_valor, valor_recebido, observacoes, data_pagamento } = req.body;
 
     try {
       const readResult = await sheets.spreadsheets.values.get({
@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
       }
 
       const dataFormatada = formatarData(data_pagamento);
-      novaObs += ` | Pago R$ ${novo_valor} no dia ${dataFormatada}.`;
+      novaObs += ` | Pago R$ ${valor_recebido} no dia ${dataFormatada}.`;
 
       // Atualiza o valor recebido (coluna H)
       await sheets.spreadsheets.values.update({
