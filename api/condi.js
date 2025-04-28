@@ -11,6 +11,7 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     try {
+      console.log('Corpo recebido no POST /condi:', JSON.stringify(req.body, null, 2));
       const sheets = await authenticate();
       const spreadsheetId = process.env.SPREADSHEET_ID;
       const { data, cpf, produtos } = req.body; 
