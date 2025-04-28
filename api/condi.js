@@ -12,43 +12,43 @@ export default async function handler(req, res) {
   if (req.method === "POST") {
     try {
       console.log('Corpo recebido no POST /condi:', JSON.stringify(req.body, null, 2));
+
       const sheets = await authenticate();
       const spreadsheetId = process.env.SPREADSHEET_ID;
-      const { data, cpf, produtos } = req.body; 
-      // produtos = array de objetos [{ codigoProduto }]
+      const { registros } = req.body; // <-- agora usa registros
+
+      if (!registros || registros.length === 0) {
+        return res.status(400).json({ message: "Nenhum registro recebido." });
+      }
 
       // 1. Buscar o último Codigo_condi existente
       const requestUltimoCodigo = {
         spreadsheetId: spreadsheetId,
-        range: 'Condi!A2:A', // Conferir se o nome da aba está correto
+        range: 'Condi!A2:A', // Supondo que o Codigo_condi esteja na coluna A
       };
 
       const response = await sheets.spreadsheets.values.get(requestUltimoCodigo);
-      const codigosExistentes = (response.data && response.data.values) ? response.data.values : [];
+      const codigosExistentes = response.data.values || [];
 
       let ultimoCodigo = 0;
-      if (Array.isArray(codigosExistentes) && codigosExistentes.length > 0) {
-        const codigosNumericos = codigosExistentes
-          .map(c => parseInt(c[0], 10))
-          .filter(n => !isNaN(n));
-
-        if (codigosNumericos.length > 0) {
-          ultimoCodigo = Math.max(...codigosNumericos);
-        }
+      if (codigosExistentes.length > 0) {
+        ultimoCodigo = Math.max(...codigosExistentes.map(c => parseInt(c[0], 10)).filter(n => !isNaN(n)));
       }
 
       const novoCodigo = ultimoCodigo + 1;
 
       // 2. Montar os dados
-      const codigosProdutos = produtos.map(p => p.codigoProduto).join(','); // "001,002,003"
+      const data = registros[0].data;
+      const cpf = registros[0].cpf;
+      const codigosProdutos = registros.map(r => r.codigoProduto).join(','); // pega todos os códigos e junta
       const status = "Enviado";
 
       const registro = [
-        novoCodigo,        // Codigo_condi
-        data,              // Data do condi
-        cpf,               // CPF do cliente
-        codigosProdutos,   // Codigos dos produtos separados por vírgula
-        status             // Status
+        novoCodigo,    // Codigo_condi
+        data,          // Data do condi (primeiro registro)
+        cpf,           // CPF (primeiro registro)
+        codigosProdutos, // Códigos separados por vírgula
+        status         // Status
       ];
 
       // 3. Inserir no Google Sheets
@@ -67,12 +67,10 @@ export default async function handler(req, res) {
       res.status(200).json({ message: "Condição registrada com sucesso!", Codigo_condi: novoCodigo });
 
     } catch (error) {
-      console.error(error);
+      console.error('Erro no POST /condi:', error);
       res.status(500).json({ message: 'Erro ao registrar condição', error: error.message });
     }
   } else {
     res.status(405).json({ message: 'Método não permitido' });
   }
 }
-
-
