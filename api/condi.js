@@ -19,14 +19,14 @@ export default async function handler(req, res) {
       // 1. Buscar o último Codigo_condi existente
       const requestUltimoCodigo = {
         spreadsheetId: spreadsheetId,
-        range: 'Condi!A2:A', // Corrigi aqui de 'Condi' para 'Condicoes'
+        range: 'Condicoes!A2:A', // Conferir se o nome da aba está correto
       };
 
       const response = await sheets.spreadsheets.values.get(requestUltimoCodigo);
-      const codigosExistentes = response.data.values || [];
+      const codigosExistentes = (response.data && response.data.values) ? response.data.values : [];
 
       let ultimoCodigo = 0;
-      if (codigosExistentes.length > 0) {
+      if (Array.isArray(codigosExistentes) && codigosExistentes.length > 0) {
         const codigosNumericos = codigosExistentes
           .map(c => parseInt(c[0], 10))
           .filter(n => !isNaN(n));
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       // 3. Inserir no Google Sheets
       const addRequest = {
         spreadsheetId: spreadsheetId,
-        range: 'Condi!A2', // Corrigi aqui também
+        range: 'Condicoes!A2',
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         resource: {
@@ -73,4 +73,5 @@ export default async function handler(req, res) {
     res.status(405).json({ message: 'Método não permitido' });
   }
 }
+
 
