@@ -19,7 +19,7 @@ export default async function handler(req, res) {
       // 1. Buscar o último Codigo_condi existente
       const requestUltimoCodigo = {
         spreadsheetId: spreadsheetId,
-        range: 'Condicoes!A2:A', // Supondo que o Codigo_condi esteja na coluna A
+        range: 'Condi!A2:A', // Supondo que o Codigo_condi esteja na coluna A
       };
 
       const response = await sheets.spreadsheets.values.get(requestUltimoCodigo);
