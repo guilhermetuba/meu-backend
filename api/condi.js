@@ -19,7 +19,7 @@ export default async function handler(req, res) {
       // 1. Buscar o último Codigo_condi existente
       const requestUltimoCodigo = {
         spreadsheetId: spreadsheetId,
-        range: 'Condicoes!A2:A', // Conferir se o nome da aba está correto
+        range: 'Condi!A2:A', // Conferir se o nome da aba está correto
       };
 
       const response = await sheets.spreadsheets.values.get(requestUltimoCodigo);
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       // 3. Inserir no Google Sheets
       const addRequest = {
         spreadsheetId: spreadsheetId,
-        range: 'Condicoes!A2',
+        range: 'Condi!A2',
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         resource: {
