@@ -14,46 +14,79 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     try {
+      console.log("Iniciando busca de clientes com Condi 'Enviado'...");
+
       // 1. Buscar dados da aba Condi
       const condiResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Condi!A2:E',
+        range: 'Condi!A1:E',
       });
 
       const condiRows = condiResponse.data.values;
+      if (!condiRows || condiRows.length === 0) {
+        console.log("Nenhuma linha encontrada na aba Condi.");
+        return res.status(200).json([]);
+      }
+
       const condiHeader = condiRows[0];
+      console.log("Cabeçalho Condi:", condiHeader);
+
       const cpfIndex = condiHeader.indexOf('CPF');
       const statusIndex = condiHeader.indexOf('Status');
 
+      if (cpfIndex === -1 || statusIndex === -1) {
+        console.error("Colunas 'CPF' ou 'Status' não encontradas na aba Condi!");
+        return res.status(500).json({ message: "Colunas 'CPF' ou 'Status' ausentes na aba Condi." });
+      }
+
       const cpfsEnviados = new Set();
       for (let i = 1; i < condiRows.length; i++) {
-        if (condiRows[i][statusIndex] === 'Enviado') {
-          cpfsEnviados.add(condiRows[i][cpfIndex]);
+        const row = condiRows[i];
+        const status = row[statusIndex];
+        const cpf = row[cpfIndex];
+        if (status === 'Enviado') {
+          cpfsEnviados.add(cpf);
         }
       }
+
+      console.log("CPFs com status 'Enviado':", Array.from(cpfsEnviados));
 
       // 2. Buscar dados da aba Clientes
       const clientesResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Clientes!A2:F',
+        range: 'Clientes!A1:F',
       });
 
       const clientesRows = clientesResponse.data.values;
+      if (!clientesRows || clientesRows.length === 0) {
+        console.log("Nenhuma linha encontrada na aba Clientes.");
+        return res.status(200).json([]);
+      }
+
       const clientesHeader = clientesRows[0];
+      console.log("Cabeçalho Clientes:", clientesHeader);
+
       const cpfClienteIndex = clientesHeader.indexOf('CPF');
       const nomeIndex = clientesHeader.indexOf('Nome');
+
+      if (cpfClienteIndex === -1 || nomeIndex === -1) {
+        console.error("Colunas 'CPF' ou 'Nome' não encontradas na aba Clientes!");
+        return res.status(500).json({ message: "Colunas 'CPF' ou 'Nome' ausentes na aba Clientes." });
+      }
 
       const clientesFiltrados = [];
 
       for (let i = 1; i < clientesRows.length; i++) {
-        const cpf = clientesRows[i][cpfClienteIndex];
+        const row = clientesRows[i];
+        const cpf = row[cpfClienteIndex];
+        const nome = row[nomeIndex];
+
         if (cpfsEnviados.has(cpf)) {
-          clientesFiltrados.push({
-            nome: clientesRows[i][nomeIndex],
-            cpf,
-          });
+          clientesFiltrados.push({ nome, cpf });
         }
       }
+
+      console.log("Clientes com condi 'Enviado':", clientesFiltrados);
 
       return res.status(200).json(clientesFiltrados);
 
@@ -63,6 +96,7 @@ export default async function handler(req, res) {
     }
   }
 
+  // POST - mantido como está
   if (req.method === "POST") {
     try {
       console.log('Corpo recebido no POST /condi:', JSON.stringify(req.body, null, 2));
@@ -73,7 +107,6 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "Nenhum registro recebido." });
       }
 
-      // 1. Buscar o último Codigo_condi existente
       const requestUltimoCodigo = {
         spreadsheetId,
         range: 'Condi!A2:A',
@@ -89,7 +122,6 @@ export default async function handler(req, res) {
 
       const novoCodigo = ultimoCodigo + 1;
 
-      // 2. Montar os dados
       const data = registros[0].data;
       const cpf = registros[0].cpf;
       const codigosProdutos = registros.map(r => r.codigoProduto).join(',');
@@ -103,7 +135,6 @@ export default async function handler(req, res) {
         status,
       ];
 
-      // 3. Inserir no Google Sheets
       const addRequest = {
         spreadsheetId,
         range: 'Condi!A2',
@@ -126,4 +157,5 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ message: 'Método não permitido' });
 }
+
 
