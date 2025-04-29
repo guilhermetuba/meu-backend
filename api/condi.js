@@ -31,13 +31,13 @@ export default async function handler(req, res) {
       const condiHeader = condiRows[0];
       console.log("Cabeçalho Condi:", condiHeader);
 
-      const cpfIndex = condiHeader.indexOf('CPF');
-      const statusIndex = condiHeader.indexOf('Status');
+    const cpfIndex = condiHeader.indexOf('CPF') !== -1 ? condiHeader.indexOf('CPF') : condiHeader.indexOf('CPF_Cliente');
+const statusIndex = condiHeader.indexOf('Status');
 
-      if (cpfIndex === -1 || statusIndex === -1) {
-        console.error("Colunas 'CPF' ou 'Status' não encontradas na aba Condi!");
-        return res.status(500).json({ message: "Colunas 'CPF' ou 'Status' ausentes na aba Condi." });
-      }
+if (cpfIndex === -1 || statusIndex === -1) {
+  console.error('Colunas "CPF" ou "Status" não encontradas na aba Condi!');
+  return res.status(400).json({ message: "Colunas 'CPF' ou 'Status' ausentes na aba Condi." });
+}
 
       const cpfsEnviados = new Set();
       for (let i = 1; i < condiRows.length; i++) {
