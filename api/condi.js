@@ -12,89 +12,90 @@ export default async function handler(req, res) {
   const sheets = await authenticate();
   const spreadsheetId = process.env.SPREADSHEET_ID;
 
-  if (req.method === "GET") {
-    try {
-      console.log("Iniciando busca de clientes com Condi 'Enviado'...");
+   if (req.method === "GET") {
+    const { cpf } = req.query;
 
-      // 1. Buscar dados da aba Condi
+    try {
       const condiResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Condi!A1:E',
+        range: 'Condi!A1:Z',
       });
 
       const condiRows = condiResponse.data.values;
-      if (!condiRows || condiRows.length === 0) {
-        console.log("Nenhuma linha encontrada na aba Condi.");
+      if (!condiRows || condiRows.length < 2) {
         return res.status(200).json([]);
       }
 
-      const condiHeader = condiRows[0];
-      console.log("Cabeçalho Condi:", condiHeader);
+      const header = condiRows[0];
+      const cpfIndex = header.indexOf('CPF');
+      const nomeIndex = header.indexOf('Nome');
+      const statusIndex = header.indexOf('Status');
+      const dataIndex = header.indexOf('Data');
+      const codigosIndex = header.findIndex(col => col.toLowerCase().includes('código'));
 
-    const cpfIndex = condiHeader.indexOf('CPF') !== -1 ? condiHeader.indexOf('CPF') : condiHeader.indexOf('CPF_Cliente');
-const statusIndex = condiHeader.indexOf('Status');
+      if (cpfIndex === -1 || statusIndex === -1 || codigosIndex === -1 || dataIndex === -1) {
+        return res.status(500).json({ message: 'Colunas obrigatórias ausentes na aba Condi.' });
+      }
 
-if (cpfIndex === -1 || statusIndex === -1) {
-  console.error('Colunas "CPF" ou "Status" não encontradas na aba Condi!');
-  return res.status(400).json({ message: "Colunas 'CPF' ou 'Status' ausentes na aba Condi." });
-}
+      // Se CPF está presente → buscar todos os registros "Enviado" desse CPF
+      if (cpf) {
+        const estoqueResponse = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: 'Estoque!A1:Z',
+        });
 
-      const cpfsEnviados = new Set();
+        const estoqueRows = estoqueResponse.data.values;
+        const estoqueHeader = estoqueRows[0];
+        const codigoEstoqueIndex = estoqueHeader.findIndex(c => c.toLowerCase().includes('código'));
+        const nomeProdutoIndex = estoqueHeader.findIndex(c => c.toLowerCase().includes('nome'));
+
+        const produtos = [];
+
+        for (let i = 1; i < condiRows.length; i++) {
+          const row = condiRows[i];
+          if (row[cpfIndex] === cpf && row[statusIndex] === 'Enviado') {
+            const data = row[dataIndex];
+            const codigos = row[codigosIndex]?.split(',').map(c => c.trim());
+
+            codigos.forEach(codigo => {
+              const produtoEstoque = estoqueRows.find((erow, j) => j > 0 && erow[codigoEstoqueIndex] === codigo);
+              const nomeProduto = produtoEstoque ? produtoEstoque[nomeProdutoIndex] : '';
+
+              produtos.push({
+                id: `${cpf}_${codigo}_${i}`,
+                data,
+                cpf,
+                codigoProduto: codigo,
+                nomeProduto,
+              });
+            });
+          }
+        }
+
+        return res.status(200).json({ condis: produtos });
+      }
+
+      // Se CPF não está presente → retornar todos os clientes com status "Enviado", mesmo que duplicados
+      const clientes = [];
+
       for (let i = 1; i < condiRows.length; i++) {
         const row = condiRows[i];
-        const status = row[statusIndex];
-        const cpf = row[cpfIndex];
-        if (status === 'Enviado') {
-          cpfsEnviados.add(cpf);
+        if (row[statusIndex] === 'Enviado') {
+          const cpfCliente = row[cpfIndex];
+          const nomeCliente = nomeIndex !== -1 ? row[nomeIndex] : "";
+          clientes.push({ cpf: cpfCliente, nome: nomeCliente });
         }
       }
 
-      console.log("CPFs com status 'Enviado':", Array.from(cpfsEnviados));
-
-      // 2. Buscar dados da aba Clientes
-      const clientesResponse = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: 'Clientes!A1:F',
-      });
-
-      const clientesRows = clientesResponse.data.values;
-      if (!clientesRows || clientesRows.length === 0) {
-        console.log("Nenhuma linha encontrada na aba Clientes.");
-        return res.status(200).json([]);
-      }
-
-      const clientesHeader = clientesRows[0];
-      console.log("Cabeçalho Clientes:", clientesHeader);
-
-      const cpfClienteIndex = clientesHeader.indexOf('CPF');
-      const nomeIndex = clientesHeader.indexOf('Nome');
-
-      if (cpfClienteIndex === -1 || nomeIndex === -1) {
-        console.error("Colunas 'CPF' ou 'Nome' não encontradas na aba Clientes!");
-        return res.status(500).json({ message: "Colunas 'CPF' ou 'Nome' ausentes na aba Clientes." });
-      }
-
-      const clientesFiltrados = [];
-
-      for (let i = 1; i < clientesRows.length; i++) {
-        const row = clientesRows[i];
-        const cpf = row[cpfClienteIndex];
-        const nome = row[nomeIndex];
-
-        if (cpfsEnviados.has(cpf)) {
-          clientesFiltrados.push({ nome, cpf });
-        }
-      }
-
-      console.log("Clientes com condi 'Enviado':", clientesFiltrados);
-
-      return res.status(200).json(clientesFiltrados);
-
+      return res.status(200).json(clientes);
     } catch (error) {
       console.error('Erro no GET /condi:', error);
-      return res.status(500).json({ message: 'Erro ao buscar clientes com Condi "Enviado"', error: error.message });
+      return res.status(500).json({ message: 'Erro interno no servidor.', error: error.message });
     }
   }
+
+  return res.status(405).json({ message: 'Método não permitido' });
+}
 
   // POST - mantido como está
   if (req.method === "POST") {
