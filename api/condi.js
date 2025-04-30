@@ -12,7 +12,7 @@ module.exports = async function handler(req, res) {
   const sheets = await authenticate();
   const spreadsheetId = process.env.SPREADSHEET_ID;
 
-   if (req.method === "GET") {
+  if (req.method === "GET") {
     const { cpf } = req.query;
 
     try {
@@ -37,7 +37,6 @@ module.exports = async function handler(req, res) {
         return res.status(500).json({ message: 'Colunas obrigatórias ausentes na aba Condi.' });
       }
 
-      // Se CPF está presente → buscar todos os registros "Enviado" desse CPF
       if (cpf) {
         const estoqueResponse = await sheets.spreadsheets.values.get({
           spreadsheetId,
@@ -75,7 +74,6 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ condis: produtos });
       }
 
-      // Se CPF não está presente → retornar todos os clientes com status "Enviado", mesmo que duplicados
       const clientes = [];
 
       for (let i = 1; i < condiRows.length; i++) {
@@ -94,10 +92,6 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  return res.status(405).json({ message: 'Método não permitido' });
-}
-
-  // POST - mantido como está
   if (req.method === "POST") {
     try {
       console.log('Corpo recebido no POST /condi:', JSON.stringify(req.body, null, 2));
@@ -149,7 +143,6 @@ module.exports = async function handler(req, res) {
       await sheets.spreadsheets.values.append(addRequest);
 
       return res.status(200).json({ message: "Condi registrado com sucesso!", Codigo_condi: novoCodigo });
-
     } catch (error) {
       console.error('Erro no POST /condi:', error);
       return res.status(500).json({ message: 'Erro ao registrar condição', error: error.message });
@@ -157,6 +150,4 @@ module.exports = async function handler(req, res) {
   }
 
   return res.status(405).json({ message: 'Método não permitido' });
-}
-
-
+};
