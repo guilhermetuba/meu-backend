@@ -31,6 +31,7 @@ module.exports = async function handler(req, res) {
       const statusIndex = header.indexOf('Status');
       const dataIndex = header.indexOf('Data');
       const codigosIndex = header.indexOf('Codigo_Produto');
+      const nomeIndex = header.indexOf('Nome');
 
       if (cpfIndex === -1 || statusIndex === -1 || codigosIndex === -1 || dataIndex === -1) {
         return res.status(500).json({ message: 'Colunas obrigatórias ausentes na aba Condi.' });
