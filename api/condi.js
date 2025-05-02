@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
     try {
       const condiResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Condi!A1:Z',
+        range: 'Condi!A1:E',
       });
 
       const condiRows = condiResponse.data.values;
@@ -27,11 +27,10 @@ module.exports = async function handler(req, res) {
       }
 
       const header = condiRows[0];
-      const cpfIndex = header.indexOf('CPF');
-      const nomeIndex = header.indexOf('Nome');
+      const cpfIndex = header.indexOf('CPF_Cliente');
       const statusIndex = header.indexOf('Status');
       const dataIndex = header.indexOf('Data');
-      const codigosIndex = header.findIndex(col => col.toLowerCase().includes('código'));
+      const codigosIndex = header.indexOf('Codigo_Produto');
 
       if (cpfIndex === -1 || statusIndex === -1 || codigosIndex === -1 || dataIndex === -1) {
         return res.status(500).json({ message: 'Colunas obrigatórias ausentes na aba Condi.' });
@@ -40,13 +39,13 @@ module.exports = async function handler(req, res) {
       if (cpf) {
         const estoqueResponse = await sheets.spreadsheets.values.get({
           spreadsheetId,
-          range: 'Estoque!A1:Z',
+          range: 'Estoque!A1:G',
         });
 
         const estoqueRows = estoqueResponse.data.values;
         const estoqueHeader = estoqueRows[0];
-        const codigoEstoqueIndex = estoqueHeader.findIndex(c => c.toLowerCase().includes('código'));
-        const nomeProdutoIndex = estoqueHeader.findIndex(c => c.toLowerCase().includes('nome'));
+        const codigoEstoqueIndex = estoqueHeader.indexOf('Codigo_Produto');
+        const nomeProdutoIndex = estoqueHeader.indexOf('Nome');
 
         const produtos = [];
 
