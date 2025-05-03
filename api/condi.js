@@ -74,18 +74,47 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ condis: produtos });
       }
 
-      const clientes = [];
+      // Busca dados da aba Clientes
+const clientesResponse = await sheets.spreadsheets.values.get({
+  spreadsheetId,
+  range: 'Clientes!A1:F',
+});
+const clientesRows = clientesResponse.data.values;
+const clientesHeader = clientesRows[0];
+const cpfClientesIndex = clientesHeader.indexOf('CPF');
+const nomeClientesIndex = clientesHeader.indexOf('Nome');
 
-      for (let i = 1; i < condiRows.length; i++) {
-        const row = condiRows[i];
-        if (row[statusIndex] === 'Enviado') {
-          const cpfCliente = row[cpfIndex];
-          const nomeCliente = nomeIndex !== -1 ? row[nomeIndex] : "";
-          clientes.push({ cpf: cpfCliente, nome: nomeCliente });
-        }
-      }
+// Cria um mapa CPF → Nome
+const mapaClientes = {};
+for (let i = 1; i < clientesRows.length; i++) {
+  const row = clientesRows[i];
+  const cpf = row[cpfClientesIndex];
+  const nome = row[nomeClientesIndex];
+  if (cpf && nome) {
+    mapaClientes[cpf] = nome;
+  }
+}
 
-      return res.status(200).json(clientes);
+// Agora monta a lista de clientes da aba Condi
+const clientes = [];
+const cpfsUnicos = new Set();
+
+for (let i = 1; i < condiRows.length; i++) {
+  const row = condiRows[i];
+  if (row[statusIndex] === 'Enviado') {
+    const cpfCliente = row[cpfIndex];
+    if (!cpfsUnicos.has(cpfCliente)) {
+      cpfsUnicos.add(cpfCliente);
+      clientes.push({
+        cpf: cpfCliente,
+        nome: mapaClientes[cpfCliente] || '',
+      });
+    }
+  }
+}
+
+return res.status(200).json(clientes);
+
     } catch (error) {
       console.error('Erro no GET /condi:', error);
       return res.status(500).json({ message: 'Erro interno no servidor.', error: error.message });
