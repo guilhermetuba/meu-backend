@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
         const estoqueRows = estoqueResponse.data.values;
         const estoqueHeader = estoqueRows[0];
         const codigoEstoqueIndex = estoqueHeader.indexOf('Codigo_Produto');
-        const nomeProdutoIndex = estoqueHeader.indexOf('Nome');
+        const nomeProdutoIndex = estoqueHeader.indexOf('Produto');
 
         const produtos = [];
 
