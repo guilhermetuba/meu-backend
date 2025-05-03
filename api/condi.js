@@ -60,6 +60,10 @@ module.exports = async function handler(req, res) {
               const produtoEstoque = estoqueRows.find((erow, j) => j > 0 && erow[codigoEstoqueIndex] === codigo);
               const nomeProduto = produtoEstoque ? produtoEstoque[nomeProdutoIndex] : '';
 
+              console.log('Buscando produto:', codigo);
+              console.log('Produto encontrado:', produtoEstoque);
+              console.log('Nome do produto:', nomeProduto);
+
               produtos.push({
                 id: `${cpf}_${codigo}_${i}`,
                 data,
