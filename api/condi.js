@@ -58,14 +58,14 @@ module.exports = async function handler(req, res) {
 
            codigos.forEach(codigo => {
   const codigoLimpo = codigo.trim();
+  console.log("Código do produto na Condi:", codigoLimpo);
+
   const produtoEstoque = estoqueRows.find((erow, j) => j > 0 && erow[codigoEstoqueIndex]?.trim() === codigoLimpo);
+  
+  console.log("Produto encontrado:", produtoEstoque);
   const nomeProduto = produtoEstoque ? produtoEstoque[nomeProdutoIndex] : '';
 
-              console.log('Buscando produto:', codigo);
-              console.log('Produto encontrado:', produtoEstoque);
-              console.log('Nome do produto:', nomeProduto);
-
-           produtos.push({
+  produtos.push({
     id: `${cpf}_${codigo}_${i}`,
     data,
     cpf,
