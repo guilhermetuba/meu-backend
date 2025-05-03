@@ -60,7 +60,12 @@ module.exports = async function handler(req, res) {
   const codigoLimpo = codigo.trim();
   console.log("Código do produto na Condi:", codigoLimpo);
 
-  const produtoEstoque = estoqueRows.find((erow, j) => j > 0 && erow[codigoEstoqueIndex]?.trim() === codigoLimpo);
+const codigoLimpo = parseInt(codigo.trim(), 10);
+
+const produtoEstoque = estoqueRows.find((erow, j) => {
+  const estoqueCodigo = parseInt(erow[codigoEstoqueIndex]?.trim(), 10);
+  return j > 0 && estoqueCodigo === codigoLimpo;
+});
   
   console.log("Produto encontrado:", produtoEstoque);
   const nomeProduto = produtoEstoque ? produtoEstoque[nomeProdutoIndex] : '';
