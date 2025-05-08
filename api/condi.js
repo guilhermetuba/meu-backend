@@ -127,62 +127,97 @@ return res.status(200).json(clientes);
     }
   }
 
-  if (req.method === "POST") {
-    try {
-      console.log('Corpo recebido no POST /condi:', JSON.stringify(req.body, null, 2));
+if (req.method === "POST") {
+  try {
+    console.log('Corpo recebido no POST /condi:', JSON.stringify(req.body, null, 2));
 
-      const { registros } = req.body;
+    // NOVO: Verifica se é uma ação de devolução por CPF
+    if (req.body.action === "devolver-por-cpf" && req.body.cpf) {
+      const cpfAlvo = req.body.cpf;
 
-      if (!registros || registros.length === 0) {
-        return res.status(400).json({ message: "Nenhum registro recebido." });
-      }
-
-      const requestUltimoCodigo = {
+      const getRequest = {
         spreadsheetId,
-        range: 'Condi!A2:A',
+        range: 'Condi!A2:E', // Supondo que as colunas são: Código | Data | CPF | CódigosProdutos | Status
       };
 
-      const response = await sheets.spreadsheets.values.get(requestUltimoCodigo);
-      const codigosExistentes = response.data.values || [];
+      const response = await sheets.spreadsheets.values.get(getRequest);
+      const linhas = response.data.values || [];
 
-      let ultimoCodigo = 0;
-      if (codigosExistentes.length > 0) {
-        ultimoCodigo = Math.max(...codigosExistentes.map(c => parseInt(c[0], 10)).filter(n => !isNaN(n)));
-      }
+      const novasLinhas = linhas.map((linha, index) => {
+        const [codigo, data, cpf, codigosProdutos, status] = linha;
 
-      const novoCodigo = ultimoCodigo + 1;
+        if (cpf === cpfAlvo && status === "Enviado") {
+          linha[4] = "Devolvido"; // Atualiza a coluna 'Status'
+        }
 
-      const data = registros[0].data;
-      const cpf = registros[0].cpf;
-      const codigosProdutos = registros.map(r => r.codigoProduto).join(',');
-      const status = "Enviado";
+        return linha;
+      });
 
-      const registro = [
-        novoCodigo,
-        data,
-        cpf,
-        codigosProdutos,
-        status,
-      ];
-
-      const addRequest = {
+      // Atualiza todas as linhas (regrava tudo a partir da linha 2)
+      await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: 'Condi!A2',
+        range: `Condi!A2:E`,
         valueInputOption: 'RAW',
-        insertDataOption: 'INSERT_ROWS',
-        resource: {
-          values: [registro],
-        },
-      };
+        resource: { values: novasLinhas },
+      });
 
-      await sheets.spreadsheets.values.append(addRequest);
-
-      return res.status(200).json({ message: "Condi registrado com sucesso!", Codigo_condi: novoCodigo });
-    } catch (error) {
-      console.error('Erro no POST /condi:', error);
-      return res.status(500).json({ message: 'Erro ao registrar condição', error: error.message });
+      return res.status(200).json({ message: `Devolução registrada para o CPF ${cpfAlvo}` });
     }
+
+    // --- FLUXO NORMAL PARA REGISTRAR NOVO CONDI ---
+    const { registros } = req.body;
+
+    if (!registros || registros.length === 0) {
+      return res.status(400).json({ message: "Nenhum registro recebido." });
+    }
+
+    const requestUltimoCodigo = {
+      spreadsheetId,
+      range: 'Condi!A2:A',
+    };
+
+    const response = await sheets.spreadsheets.values.get(requestUltimoCodigo);
+    const codigosExistentes = response.data.values || [];
+
+    let ultimoCodigo = 0;
+    if (codigosExistentes.length > 0) {
+      ultimoCodigo = Math.max(...codigosExistentes.map(c => parseInt(c[0], 10)).filter(n => !isNaN(n)));
+    }
+
+    const novoCodigo = ultimoCodigo + 1;
+
+    const data = registros[0].data;
+    const cpf = registros[0].cpf;
+    const codigosProdutos = registros.map(r => r.codigoProduto).join(',');
+    const status = "Enviado";
+
+    const registro = [
+      novoCodigo,
+      data,
+      cpf,
+      codigosProdutos,
+      status,
+    ];
+
+    const addRequest = {
+      spreadsheetId,
+      range: 'Condi!A2',
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      resource: {
+        values: [registro],
+      },
+    };
+
+    await sheets.spreadsheets.values.append(addRequest);
+
+    return res.status(200).json({ message: "Condi registrado com sucesso!", Codigo_condi: novoCodigo });
+
+  } catch (error) {
+    console.error('Erro no POST /condi:', error);
+    return res.status(500).json({ message: 'Erro no processamento', error: error.message });
   }
+}
 
   return res.status(405).json({ message: 'Método não permitido' });
 };
