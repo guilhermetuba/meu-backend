@@ -128,16 +128,15 @@ return res.status(200).json(clientes);
   }
 
 if (req.method === "POST") {
-  const action = req.query.action;
+  try {
+    const action = req.query.action;
 
-  // ✅ NOVO TRATAMENTO: Marcar Condis como devolvidos por CPF
-  if (action === "devolver-por-cpf") {
-    const { cpf } = req.body;
-    if (!cpf) {
-      return res.status(400).json({ message: "CPF não fornecido." });
-    }
+    if (action === "devolver-por-cpf") {
+      const { cpf } = req.body;
+      if (!cpf) {
+        return res.status(400).json({ message: "CPF não fornecido." });
+      }
 
-    try {
       const getRequest = {
         spreadsheetId,
         range: 'Condi!A2:E',
@@ -154,7 +153,6 @@ if (req.method === "POST") {
         const status = linha[4];
 
         if (linhaCpf === cpf && status === "Enviado") {
-          // Atualizar essa linha para "Devolvido"
           const updateRequest = {
             spreadsheetId,
             range: `Condi!E${i + 2}`,
@@ -169,11 +167,7 @@ if (req.method === "POST") {
       }
 
       return res.status(200).json({ message: `${linhasAlteradas} registros marcados como devolvidos.` });
-    } catch (erro) {
-      console.error("Erro ao devolver por CPF:", erro);
-      return res.status(500).json({ message: "Erro ao atualizar registros", error: erro.message });
     }
-  }
 
     // --- FLUXO NORMAL PARA REGISTRAR NOVO CONDI ---
     const { registros } = req.body;
@@ -223,12 +217,12 @@ if (req.method === "POST") {
     await sheets.spreadsheets.values.append(addRequest);
 
     return res.status(200).json({ message: "Condi registrado com sucesso!", Codigo_condi: novoCodigo });
-
   } catch (error) {
     console.error('Erro no POST /condi:', error);
     return res.status(500).json({ message: 'Erro no processamento', error: error.message });
   }
 }
+
 
   return res.status(405).json({ message: 'Método não permitido' });
 };
