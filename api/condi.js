@@ -128,41 +128,52 @@ return res.status(200).json(clientes);
   }
 
 if (req.method === "POST") {
-  try {
-    console.log('Corpo recebido no POST /condi:', JSON.stringify(req.body, null, 2));
+  const action = req.query.action;
 
-    // NOVO: Verifica se é uma ação de devolução por CPF
-    if (req.body.action === "devolver-por-cpf" && req.body.cpf) {
-      const cpfAlvo = req.body.cpf;
+  // ✅ NOVO TRATAMENTO: Marcar Condis como devolvidos por CPF
+  if (action === "devolver-por-cpf") {
+    const { cpf } = req.body;
+    if (!cpf) {
+      return res.status(400).json({ message: "CPF não fornecido." });
+    }
 
+    try {
       const getRequest = {
         spreadsheetId,
-        range: 'Condi!A2:E', // Supondo que as colunas são: Código | Data | CPF | CódigosProdutos | Status
+        range: 'Condi!A2:E',
       };
 
       const response = await sheets.spreadsheets.values.get(getRequest);
-      const linhas = response.data.values || [];
+      const valores = response.data.values || [];
 
-      const novasLinhas = linhas.map((linha, index) => {
-        const [codigo, data, cpf, codigosProdutos, status] = linha;
+      let linhasAlteradas = 0;
 
-        if (cpf === cpfAlvo && status === "Enviado") {
-          linha[4] = "Devolvido"; // Atualiza a coluna 'Status'
+      for (let i = 0; i < valores.length; i++) {
+        const linha = valores[i];
+        const linhaCpf = linha[2];
+        const status = linha[4];
+
+        if (linhaCpf === cpf && status === "Enviado") {
+          // Atualizar essa linha para "Devolvido"
+          const updateRequest = {
+            spreadsheetId,
+            range: `Condi!E${i + 2}`,
+            valueInputOption: 'RAW',
+            resource: {
+              values: [["Devolvido"]],
+            },
+          };
+          await sheets.spreadsheets.values.update(updateRequest);
+          linhasAlteradas++;
         }
+      }
 
-        return linha;
-      });
-
-      // Atualiza todas as linhas (regrava tudo a partir da linha 2)
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `Condi!A2:E`,
-        valueInputOption: 'RAW',
-        resource: { values: novasLinhas },
-      });
-
-      return res.status(200).json({ message: `Devolução registrada para o CPF ${cpfAlvo}` });
+      return res.status(200).json({ message: `${linhasAlteradas} registros marcados como devolvidos.` });
+    } catch (erro) {
+      console.error("Erro ao devolver por CPF:", erro);
+      return res.status(500).json({ message: "Erro ao atualizar registros", error: erro.message });
     }
+  }
 
     // --- FLUXO NORMAL PARA REGISTRAR NOVO CONDI ---
     const { registros } = req.body;
