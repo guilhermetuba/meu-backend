@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
     try {
       const request = {
         spreadsheetId,
-        range: "Contas a Receber!A2:J",
+        range: "Contas a Receber!A1:J",
       };
 
       const response = await sheets.spreadsheets.values.get(request);
