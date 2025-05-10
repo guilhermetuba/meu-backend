@@ -38,7 +38,7 @@ module.exports = async function handler(req, res) {
         vencimento: row[4],
         formaPagamento: row[5],
         parcela: row[6],
-        valor: parseFloat(row[7].replace(',', '.'))
+        valor: parseFloat(row[7].replace(',', '.')),
         status: row[8],
         dataPagamento: row[9],
         observacoes: row[10] || ""
