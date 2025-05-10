@@ -12,64 +12,70 @@ module.exports = async function handler(req, res) {
   const sheets = await authenticate();
   const spreadsheetId = process.env.SPREADSHEET_ID;
 
-   if (req.method === "GET") {
-    try {
-      const { status, dias } = req.query;
+  if (req.method === "GET") {
+  try {
+    const { status, dias } = req.query;
 
-      const readResult = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: "Contas a Receber!A2:K",
-      });
+    const readResult = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "Contas a Receber!A2:K",
+    });
 
-      const rows = readResult.data.values || [];
-      const hoje = new Date();
+    const rows = readResult.data.values || [];
+    const hoje = new Date();
 
-      const contasFiltradas = rows
-        .map(row => ({
-          id: row[0],
-          codigoVenda: row[1],
-          cpf: row[2],
-          dataVenda: row[3],
-          vencimento: row[4],
-          formaPagamento: row[5],
-          parcela: row[6],
-          valor: parseFloat(row[7]),
-          status: row[8],
-          dataPagamento: row[9],
-          observacoes: row[10] || ""
-        }))
-        .filter(conta => {
-          let incluir = true;
+    function parseDataBrasileira(dataStr) {
+      const [dia, mes, ano] = dataStr.split('/');
+      return new Date(`${ano}-${mes}-${dia}`);
+    }
 
-          // Filtro por status
-          if (status && conta.status !== status) incluir = false;
+    const contasFiltradas = rows
+      .map(row => ({
+        id: row[0],
+        codigoVenda: row[1],
+        cpf: row[2],
+        dataVenda: row[3],
+        vencimento: row[4],
+        formaPagamento: row[5],
+        parcela: row[6],
+        valor: parseFloat(row[7]),
+        status: row[8],
+        dataPagamento: row[9],
+        observacoes: row[10] || ""
+      }))
+      .filter(conta => {
+        let incluir = true;
 
-          // Filtro por vencimento
-          if (dias !== undefined) {
-            const dataVenc = new Date(conta.vencimento);
-            const diferencaDias = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+        // Filtro por status
+        if (status && conta.status !== status) incluir = false;
 
-            if (dias === '-1') {
-              incluir = incluir && diferencaDias < 0; // atrasadas
-            } else if (dias === '90+') {
-              incluir = incluir && diferencaDias > 90;
-            } else {
-              const limite = parseInt(dias);
-              if (!isNaN(limite)) {
-                incluir = incluir && diferencaDias >= 0 && diferencaDias <= limite;
-              }
+        // Filtro por vencimento
+        if (dias !== undefined && dias !== '') {
+          const dataVenc = parseDataBrasileira(conta.vencimento);
+          const diferencaDias = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+
+          if (dias === '-1') {
+            incluir = incluir && diferencaDias < 0; // atrasadas
+          } else if (dias === '90+') {
+            incluir = incluir && diferencaDias > 90;
+          } else {
+            const limite = parseInt(dias);
+            if (!isNaN(limite)) {
+              incluir = incluir && diferencaDias >= 0 && diferencaDias <= limite;
             }
           }
+        }
 
-          return incluir;
-        });
+        return incluir;
+      });
 
-      return res.status(200).json(contasFiltradas);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ erro: "Erro ao buscar contas" });
-    }
+    return res.status(200).json(contasFiltradas);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ erro: "Erro ao buscar contas" });
   }
+}
+
   
   if (req.method === "POST") {
     const { id_parcela, parcela_original, novo_valor, valor_recebido, observacoes, data_pagamento } = req.body;
@@ -144,7 +150,6 @@ function formatarData(data) {
   const [ano, mes, dia] = data.split('-');
   return `${dia}/${mes}/${ano}`;
 }
-
 
 
 
