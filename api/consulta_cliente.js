@@ -1,5 +1,10 @@
 const authenticate = require('../utils/auth');
 
+// Variáveis globais de cache
+let cacheClientes = null;
+let cacheTimestamp = 0;
+const TEMPO_CACHE_MS = 60 * 1000; // 60 segundos
+
 module.exports = async function handler(req, res) {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -8,23 +13,29 @@ module.exports = async function handler(req, res) {
     if (req.method === "OPTIONS") {
         return res.status(200).end();
     }
-  const sheets = await authenticate(); // Chama a função de autenticação
+
     try {
-        const sheets = await authenticate();
-        const spreadsheetId = process.env.SPREADSHEET_ID;
+        // Verifica se o cache está válido
+        const agora = Date.now();
+        if (!cacheClientes || agora - cacheTimestamp > TEMPO_CACHE_MS) {
+            const sheets = await authenticate();
+            const spreadsheetId = process.env.SPREADSHEET_ID;
 
-        const request = {
-            spreadsheetId: spreadsheetId,
-            range: "Clientes!A2:F", // Ajuste conforme as colunas da sua planilha
-        };
+            const request = {
+                spreadsheetId: spreadsheetId,
+                range: "Clientes!A2:F",
+            };
 
-        const response = await sheets.spreadsheets.values.get(request);
-        const clientes = response.data.values || [];
+            const response = await sheets.spreadsheets.values.get(request);
+            cacheClientes = response.data.values || [];
+            cacheTimestamp = agora;
+        }
 
-        // Se houver um CPF na query, buscar apenas esse cliente
+        const clientes = cacheClientes;
         const { cpf } = req.query;
+
         if (cpf) {
-            const clienteEncontrado = clientes.find(c => c[1] === cpf); // CPF está na coluna B
+            const clienteEncontrado = clientes.find(c => c[1] === cpf);
             if (clienteEncontrado) {
                 return res.status(200).json({
                     nome: clienteEncontrado[0],
