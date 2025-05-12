@@ -148,41 +148,42 @@ module.exports = async function handler(req, res) {
   }
 
   // NOVA ROTA: Buscar nome do cliente pelo CPF com cache
- if (req.method === "PATCH") {
-  const { cpf } = req.body;
-  console.log('Recebido PATCH para CPF:', cpf); // log CPF recebido
-
-  if (!cpf) {
-    console.warn('PATCH sem CPF');
-    return res.status(400).json({ erro: "CPF é obrigatório" });
-  }
+if (req.method === "PATCH") {
+  const { cpf, cpfs } = req.body;
 
   try {
     const agora = Date.now();
     if (!cacheClientes || agora - cacheTimestamp > 60 * 1000) {
-      console.log('Atualizando cache de clientes');
       const resultado = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: "Clientes!A2:F"
       });
       cacheClientes = resultado.data.values || [];
       cacheTimestamp = agora;
-    } else {
-      console.log('Usando cache de clientes');
     }
 
-    const cliente = cacheClientes.find(row => row[1] === cpf);
-    const nome = cliente ? cliente[0] : null;
+    if (cpf) {
+      const cliente = cacheClientes.find(row => row[1] === cpf);
+      const nome = cliente ? cliente[0] : null;
+      return res.status(200).json({ nome });
+    }
 
-    console.log(`Nome encontrado para CPF ${cpf}:`, nome);
+    if (cpfs && Array.isArray(cpfs)) {
+      const resultado = {};
+      for (const cpfItem of cpfs) {
+        const cliente = cacheClientes.find(row => row[1] === cpfItem);
+        resultado[cpfItem] = cliente ? cliente[0] : null;
+      }
+      return res.status(200).json(resultado); // { cpf1: nome1, cpf2: nome2 }
+    }
 
-    return res.status(200).json({ nome });
+    return res.status(400).json({ erro: "CPF ou lista de CPFs é obrigatória" });
+
   } catch (erro) {
-    console.error('Erro no PATCH ao buscar nome por CPF:', erro);
-    return res.status(500).json({ erro: "Erro ao buscar nome do cliente" });
+    console.error('Erro no PATCH:', erro);
+    return res.status(500).json({ erro: "Erro ao buscar nome(s) do cliente" });
   }
 }
-
 
 // Função para formatar a data
 function formatarData(data) {
