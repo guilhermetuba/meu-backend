@@ -16,83 +16,74 @@ module.exports = async function handler(req, res) {
   const sheets = await authenticate();
   const spreadsheetId = process.env.SPREADSHEET_ID;
 
-  if (req.method === "GET") {
-    try {
-      const { status, dias } = req.query;
+if (req.method === "GET") {
+  try {
+    const { status, dias } = req.query;
 
-      const readResult = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: "Contas a Receber!A2:K",
+    const readResult = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "Contas a Receber!A2:K",
+    });
+
+    const rows = readResult.data.values || [];
+    const hoje = new Date();
+
+    function parseDataBrasileira(dataStr) {
+      const [dia, mes, ano] = dataStr.split('/');
+      return new Date(`${ano}-${mes}-${dia}`);
+    }
+
+    const contasFiltradas = rows
+      .map(row => ({
+        id: row[0],
+        codigoVenda: row[1],
+        cpf: row[2],
+        dataVenda: row[3],
+        vencimento: row[4],
+        formaPagamento: row[5],
+        parcela: row[6],
+        valor: parseFloat(row[7].replace(',', '.')),
+        status: row[8],
+        dataPagamento: row[9],
+        observacoes: row[10] || ""
+      }))
+      .filter(conta => {
+        let incluir = true;
+
+        // Filtro por status
+        if (status && conta.status !== status) incluir = false;
+
+        // Filtro por vencimento
+        if (dias !== undefined && dias !== '') {
+          const dataVenc = parseDataBrasileira(conta.vencimento);
+          const diffDias = Math.floor((hoje - dataVenc) / (1000 * 60 * 60 * 24));
+
+          if (dias === '-1') {
+            // Contas vencidas até 90 dias
+            incluir = incluir && diffDias > 0 && diffDias <= 90;
+          } else if (dias === '90+') {
+            // Contas vencidas há mais de 90 dias
+            incluir = incluir && diffDias > 90;
+          } else {
+            // Contas a vencer nos próximos X dias
+            const limite = parseInt(dias);
+            if (!isNaN(limite)) {
+              const diasFuturos = Math.floor((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+              incluir = incluir && diasFuturos >= 0 && diasFuturos <= limite;
+            }
+          }
+        }
+
+        return incluir;
       });
 
-      const rows = readResult.data.values || [];
-      const hoje = new Date();
-
-      function parseDataBrasileira(dataStr) {
-        const [dia, mes, ano] = dataStr.split('/');
-        return new Date(`${ano}-${mes}-${dia}`);
-      }
-
-      const contasFiltradas = rows
-        .map(row => ({
-          id: row[0],
-          codigoVenda: row[1],
-          cpf: row[2],
-          dataVenda: row[3],
-          vencimento: row[4],
-          formaPagamento: row[5],
-          parcela: row[6],
-          valor: parseFloat(row[7].replace(',', '.')),
-          status: row[8],
-          dataPagamento: row[9],
-          observacoes: row[10] || ""
-        }))
-        .filter(conta => {
-          let incluir = true;
-
-          // Filtro por status
-          if (status && conta.status !== status) incluir = false;
-
-          // Filtro por vencimento
-          if (dias !== undefined && dias !== '') {
-            const hoje = new Date();
-            const dataVenc = parseDataBrasileira(conta.vencimento);
-
-// diferença em milissegundos, depois dias inteiros
-const diffMs = hoje - dataVenc;
-const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-const dataVenc = parseDataBrasileira(conta.vencimento);
-const diffDias = Math.floor((hoje - dataVenc) / (1000 * 60 * 60 * 24));
-
-if (dias === '-1') {
-  // Vencidas: data de vencimento no passado
-  incluir = incluir && diffDias > 0;
-} else if (dias === '90+') {
-  // A vencer (vencimento no futuro, sem limite superior)
-  const diasFuturos = Math.floor((dataVenc - hoje) / (1000 * 60 * 60 * 24));
-  incluir = incluir && diasFuturos >= 0;
-} else {
-  // A vencer em até X dias
-  const limite = parseInt(dias);
-  if (!isNaN(limite)) {
-    const diasFuturos = Math.floor((dataVenc - hoje) / (1000 * 60 * 60 * 24));
-    incluir = incluir && diasFuturos >= 0 && diasFuturos <= limite;
+    return res.status(200).json(contasFiltradas);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ erro: "Erro ao buscar contas" });
   }
 }
 
-
-          }
-
-          return incluir;
-        });
-
-      return res.status(200).json(contasFiltradas);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ erro: "Erro ao buscar contas" });
-    }
-  }
 
   if (req.method === "POST") {
     const { id_parcela, parcela_original, novo_valor, valor_recebido, observacoes, data_pagamento } = req.body;
