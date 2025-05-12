@@ -26,12 +26,16 @@ if (req.method === "GET") {
     });
 
     const rows = readResult.data.values || [];
+
+    // Zera a hora de hoje para comparações corretas
     const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0); // Zera horas para comparação correta
+    hoje.setHours(0, 0, 0, 0);
 
     function parseDataBrasileira(dataStr) {
       const [dia, mes, ano] = dataStr.split('/');
-      return new Date(`${ano}-${mes}-${dia}`);
+      const data = new Date(`${ano}-${mes}-${dia}`);
+      data.setHours(0, 0, 0, 0);
+      return data;
     }
 
     const contasFiltradas = rows
@@ -57,18 +61,16 @@ if (req.method === "GET") {
         // Filtro por vencimento
         if (dias !== undefined && dias !== '') {
           const dataVenc = parseDataBrasileira(conta.vencimento);
-          dataVenc.setHours(0, 0, 0, 0); // Para comparação justa
 
           if (dias === '-1') {
-            // Vencidas: vencimento antes de hoje
+            // VENCIDAS: vencimento antes de hoje
             incluir = incluir && dataVenc < hoje;
           } else if (dias === '30' || dias === '60') {
-            // A vencer em até X dias
             const limite = parseInt(dias);
             const diasFuturos = Math.floor((dataVenc - hoje) / (1000 * 60 * 60 * 24));
             incluir = incluir && diasFuturos >= 0 && diasFuturos <= limite;
           } else if (dias === '9999') {
-            // Todas à vencer: vencimento hoje ou no futuro
+            // TODAS À VENCER: vencimento hoje ou no futuro
             incluir = incluir && dataVenc >= hoje;
           }
         }
@@ -82,6 +84,7 @@ if (req.method === "GET") {
     return res.status(500).json({ erro: "Erro ao buscar contas" });
   }
 }
+
 
 
   if (req.method === "POST") {
