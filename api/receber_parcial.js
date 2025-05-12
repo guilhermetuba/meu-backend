@@ -56,16 +56,17 @@ module.exports = async function handler(req, res) {
           // Filtro por vencimento
           if (dias !== undefined && dias !== '') {
             const dataVenc = parseDataBrasileira(conta.vencimento);
-            const diferencaDias = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+            const diferencaDias = Math.ceil((hoje - dataVenc) / (1000 * 60 * 60 * 24));
 
             if (dias === '-1') {
               incluir = incluir && diferencaDias < 0; // atrasadas
             } else if (dias === '90+') {
-              incluir = incluir && diferencaDias > 90;
-            } else {
+        incluir = incluir && dataVenc < hoje && diferencaDias > 90;
+      } else {
               const limite = parseInt(dias);
               if (!isNaN(limite)) {
-                incluir = incluir && diferencaDias >= 0 && diferencaDias <= limite;
+                const diasRestantes = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+          incluir = incluir && diasRestantes >= 0 && diasRestantes <= limite;
               }
             }
           }
