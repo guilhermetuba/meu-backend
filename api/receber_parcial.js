@@ -56,19 +56,33 @@ module.exports = async function handler(req, res) {
           // Filtro por vencimento
           if (dias !== undefined && dias !== '') {
             const dataVenc = parseDataBrasileira(conta.vencimento);
-            const diferencaDias = Math.ceil((hoje - dataVenc) / (1000 * 60 * 60 * 24));
+            const hoje = new Date();
+const dataVenc = parseDataBrasileira(conta.vencimento);
 
-            if (dias === '-1') {
-              incluir = incluir && diferencaDias < 0; // atrasadas
-            } else if (dias === '90+') {
-        incluir = incluir && dataVenc < hoje && diferencaDias > 90;
-      } else {
-              const limite = parseInt(dias);
-              if (!isNaN(limite)) {
-                const diasRestantes = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
-          incluir = incluir && diasRestantes >= 0 && diasRestantes <= limite;
-              }
-            }
+// diferença em milissegundos, depois dias inteiros
+const diffMs = hoje - dataVenc;
+const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+const dataVenc = parseDataBrasileira(conta.vencimento);
+const diffDias = Math.floor((hoje - dataVenc) / (1000 * 60 * 60 * 24));
+
+if (dias === '-1') {
+  // Vencidas: data de vencimento no passado
+  incluir = incluir && diffDias > 0;
+} else if (dias === '90+') {
+  // A vencer (vencimento no futuro, sem limite superior)
+  const diasFuturos = Math.floor((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+  incluir = incluir && diasFuturos >= 0;
+} else {
+  // A vencer em até X dias
+  const limite = parseInt(dias);
+  if (!isNaN(limite)) {
+    const diasFuturos = Math.floor((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+    incluir = incluir && diasFuturos >= 0 && diasFuturos <= limite;
+  }
+}
+
+
           }
 
           return incluir;
