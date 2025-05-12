@@ -31,12 +31,12 @@ if (req.method === "GET") {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    function parseDataBrasileira(dataStr) {
-      const [dia, mes, ano] = dataStr.split('/');
-      const data = new Date(`${ano}-${mes}-${dia}`);
-      data.setHours(0, 0, 0, 0);
-      return data;
-    }
+  function parseDataBrasileira(dataStr) {
+  const [dia, mes, ano] = dataStr.split('/');
+  const data = new Date(`${ano}-${mes}-${dia}`);
+  data.setHours(0, 0, 0, 0); // zera a hora
+  return data;
+}
 
     const contasFiltradas = rows
       .map(row => ({
