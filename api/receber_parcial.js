@@ -31,12 +31,11 @@ if (req.method === "GET") {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-  function parseDataBrasileira(dataStr) {
+ function parseDataBrasileira(dataStr) {
   const [dia, mes, ano] = dataStr.split('/');
-  const data = new Date(`${ano}-${mes}-${dia}`);
-  data.setHours(0, 0, 0, 0); // zera a hora
-  return data;
+  return new Date(`${ano}-${mes}-${dia}T00:00:00`);
 }
+
 
     const contasFiltradas = rows
       .map(row => ({
@@ -70,9 +69,11 @@ if (req.method === "GET") {
             const diasFuturos = Math.floor((dataVenc - hoje) / (1000 * 60 * 60 * 24));
             incluir = incluir && diasFuturos >= 0 && diasFuturos <= limite;
           } else if (dias === '9999') {
-            // TODAS À VENCER: vencimento hoje ou no futuro
-            incluir = incluir && dataVenc >= hoje;
-          }
+  const dataVenc = parseDataBrasileira(conta.vencimento);
+  dataVenc.setHours(0, 0, 0, 0);
+  hoje.setHours(0, 0, 0, 0);
+  incluir = incluir && dataVenc >= hoje;
+}
         }
 
         return incluir;
