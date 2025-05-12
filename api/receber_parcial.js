@@ -55,9 +55,8 @@ module.exports = async function handler(req, res) {
 
           // Filtro por vencimento
           if (dias !== undefined && dias !== '') {
-            const dataVenc = parseDataBrasileira(conta.vencimento);
             const hoje = new Date();
-const dataVenc = parseDataBrasileira(conta.vencimento);
+            const dataVenc = parseDataBrasileira(conta.vencimento);
 
 // diferença em milissegundos, depois dias inteiros
 const diffMs = hoje - dataVenc;
