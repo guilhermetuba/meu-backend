@@ -171,8 +171,8 @@ module.exports = async function handler(req, res) {
       console.log('Usando cache de clientes');
     }
 
-    const cliente = cacheClientes.find(row => row[0] === cpf);
-    const nome = cliente ? cliente[1] : null;
+    const cliente = cacheClientes.find(row => row[1] === cpf);
+    const nome = cliente ? cliente[0] : null;
 
     console.log(`Nome encontrado para CPF ${cpf}:`, nome);
 
