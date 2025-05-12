@@ -149,6 +149,7 @@ module.exports = async function handler(req, res) {
 
   // NOVA ROTA: Buscar nome do cliente pelo CPF com cache
 if (req.method === "PATCH") {
+  console.log('Corpo da requisição:', req.body);
   const { cpf, cpfs } = req.body;
 
   try {
