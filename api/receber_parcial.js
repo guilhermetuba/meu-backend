@@ -36,48 +36,53 @@ if (req.method === "GET") {
   return new Date(`${ano}-${mes}-${dia}T00:00:00`);
 }
 
-
     const contasFiltradas = rows
-      .map(row => ({
-        id: row[0],
-        codigoVenda: row[1],
-        cpf: row[2],
-        dataVenda: row[3],
-        vencimento: row[4],
-        formaPagamento: row[5],
-        parcela: row[6],
-        valor: parseFloat(row[7].replace(',', '.')),
-        status: row[8],
-        dataPagamento: row[9],
-        observacoes: row[10] || ""
-      }))
-      .filter(conta => {
-        let incluir = true;
+  .map(row => ({
+    id: row[0],
+    codigoVenda: row[1],
+    cpf: row[2],
+    dataVenda: row[3],
+    vencimento: row[4],
+    formaPagamento: row[5],
+    parcela: row[6],
+    valor: parseFloat(row[7].replace(',', '.')),
+    status: row[8],
+    dataPagamento: row[9],
+    observacoes: row[10] || ""
+  }))
+  .filter(conta => {
+    let incluir = true;
 
-        // Filtro por status
-        if (status && conta.status !== status) incluir = false;
+    // Filtro por status
+    if (status && conta.status !== status) incluir = false;
 
-        // Filtro por vencimento
-        if (dias !== undefined && dias !== '') {
-          const dataVenc = parseDataBrasileira(conta.vencimento);
+    // Filtro por vencimento
+    if (dias !== undefined && dias !== '') {
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
 
-          if (dias === '-1') {
-            // VENCIDAS: vencimento antes de hoje
-            incluir = incluir && dataVenc < hoje;
-          } else if (dias === '30' || dias === '60') {
-            const limite = parseInt(dias);
-            const diasFuturos = Math.floor((dataVenc - hoje) / (1000 * 60 * 60 * 24));
-            incluir = incluir && diasFuturos >= 0 && diasFuturos <= limite;
-          } else if (dias === '9999') {
-  const dataVenc = parseDataBrasileira(conta.vencimento);
-  dataVenc.setHours(0, 0, 0, 0);
-  hoje.setHours(0, 0, 0, 0);
-  incluir = incluir && dataVenc >= hoje;
-}
-        }
+      const dataVenc = parseDataBrasileira(conta.vencimento);
+      dataVenc.setHours(0, 0, 0, 0);
 
-        return incluir;
-      });
+      const diffMs = dataVenc - hoje;
+      const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (dias === '-1') {
+        // Vencidas: vencimento no passado
+        incluir = incluir && dataVenc < hoje;
+      } else if (dias === '30' || dias === '60') {
+        // À vencer em até X dias (incluindo hoje)
+        const limite = parseInt(dias);
+        incluir = incluir && diffDias >= 0 && diffDias <= limite;
+      } else if (dias === '9999') {
+        // Todas à vencer (sem limite, vencimento hoje ou futuro)
+        incluir = incluir && dataVenc >= hoje;
+      }
+    }
+
+    return incluir;
+  });
+
 
     return res.status(200).json(contasFiltradas);
   } catch (error) {
