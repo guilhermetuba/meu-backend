@@ -25,15 +25,15 @@ if (req.method === "GET") {
 
     const vendas = vendasRes.data.values || [];
     const itens = itensRes.data.values || [];
-    const clientes = clientesRes.data.values || [];
-    const estoque = estoqueRes.data.values || [];
+    const clientesRaw = clientesRes.data.values || [];
+    const estoqueRaw = estoqueRes.data.values || [];
 
-    const clienteMap = Object.fromEntries(clientes.map(([nome, cpf]) => [cpf, nome]));
-    const produtoMap = Object.fromEntries(estoque.map(([codigo, nome]) => [codigo, nome]));
+    const clienteMap = Object.fromEntries(clientesRaw.map(([nome, cpf]) => [cpf, nome]));
+    const produtoMap = Object.fromEntries(estoqueRaw.map(([codigo, nome]) => [codigo, nome]));
 
     const itensPorVenda = {};
     for (const item of itens) {
-      const [ , codVenda, , codProduto, quantidade, , valorItem ] = item;
+      const [, codVenda, , codProduto, quantidade, , valorItem] = item;
       if (!itensPorVenda[codVenda]) itensPorVenda[codVenda] = [];
       itensPorVenda[codVenda].push({ codProduto, quantidade, valorItem });
     }
