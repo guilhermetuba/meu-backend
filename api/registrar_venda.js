@@ -55,7 +55,8 @@ if (req.method === "GET") {
         const nomesProdutos = itensVenda.map(item => produtoMap[item.codProduto]);
         if (produto && !nomesProdutos.includes(produto)) continue;
 
-        total_valor += parseFloat(valorTotal) || 0;
+        const valorNumerico = parseFloat(valorTotal.replace(/\./g, '').replace(',', '.')) || 0;
+        total_valor += valorNumerico;
         total_quantidade += itensVenda.length;
       }
 
