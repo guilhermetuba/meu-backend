@@ -42,7 +42,8 @@ if (req.method === "GET") {
 
       for (const venda of vendas) {
         const [codVenda, dataVenda, cpf, valorTotal] = venda;
-        const data = new Date(dataVenda);
+        const [dia, mes, ano] = dataVenda.split('/');
+        const data = new Date(`${ano}-${mes}-${dia}`);
 
         if (dataInicio && data < new Date(dataInicio)) continue;
         if (dataFim && data > new Date(dataFim)) continue;
