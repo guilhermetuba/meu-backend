@@ -32,15 +32,17 @@ if (req.method === "GET") {
     const produtoMap = Object.fromEntries(estoque.map(([codigo, nome]) => [codigo, nome]));
 
     const itensPorVenda = {};
-    for (const [ , codVenda, , codProduto, , qtdStr, valorItemStr ] of itens) {
+    for (const item of itens) {
+      const [ , codVenda, , codProduto, quantidade, , valorItem ] = item;
       if (!itensPorVenda[codVenda]) itensPorVenda[codVenda] = [];
-      itensPorVenda[codVenda].push({ codProduto, qtdStr, valorItemStr });
+      itensPorVenda[codVenda].push({ codProduto, quantidade, valorItem });
     }
 
     let total_valor = 0;
     let total_quantidade = 0;
-    const resumoClientes = {};
-    const resumoProdutos = {};
+
+    const clienteResumo = {};
+    const produtoResumo = {};
 
     for (const venda of vendas) {
       const [codVenda, dataVenda, cpf, valorTotal] = venda;
@@ -50,36 +52,41 @@ if (req.method === "GET") {
       if (dataInicio && data < new Date(dataInicio)) continue;
       if (dataFim && data > new Date(dataFim)) continue;
 
-      const nomeCliente = clienteMap[cpf] || 'Desconhecido';
       const valorNumerico = parseFloat(valorTotal.replace(/\./g, '').replace(',', '.')) || 0;
-
       total_valor += valorNumerico;
 
-      if (!resumoClientes[nomeCliente]) resumoClientes[nomeCliente] = 0;
-      resumoClientes[nomeCliente] += valorNumerico;
+      const nomeCliente = clienteMap[cpf] || 'Desconhecido';
+      if (!clienteResumo[cpf]) {
+        clienteResumo[cpf] = { nome: nomeCliente, cpf, total: 0 };
+      }
+      clienteResumo[cpf].total += valorNumerico;
 
       const itensVenda = itensPorVenda[codVenda] || [];
-      total_quantidade += itensVenda.reduce((sum, item) => sum + (parseInt(item.qtdStr) || 0), 0);
+      total_quantidade += itensVenda.reduce((sum, i) => sum + (parseInt(i.quantidade) || 0), 0);
 
-      for (const { codProduto, qtdStr, valorItemStr } of itensVenda) {
+      for (const item of itensVenda) {
+        const { codProduto, quantidade, valorItem } = item;
         const nomeProduto = produtoMap[codProduto] || 'Desconhecido';
-        const qtd = parseInt(qtdStr, 10) || 0;
-        const valor = parseFloat(valorItemStr.replace(/\./g, '').replace(',', '.')) || 0;
+        const qtd = parseInt(quantidade) || 0;
+        const valor = parseFloat(valorItem.replace(/\./g, '').replace(',', '.')) || 0;
 
-        if (!resumoProdutos[nomeProduto]) {
-          resumoProdutos[nomeProduto] = { quantidade: 0, total: 0 };
+        if (!produtoResumo[codProduto]) {
+          produtoResumo[codProduto] = { nome: nomeProduto, codigo: codProduto, total: 0, quantidade: 0 };
         }
 
-        resumoProdutos[nomeProduto].quantidade += qtd;
-        resumoProdutos[nomeProduto].total += valor;
+        produtoResumo[codProduto].total += valor;
+        produtoResumo[codProduto].quantidade += qtd;
       }
     }
+
+    const clientes = Object.values(clienteResumo).sort((a, b) => b.total - a.total);
+    const produtos = Object.values(produtoResumo);
 
     res.status(200).json({
       total_valor,
       total_quantidade,
-      resumoClientes,
-      resumoProdutos
+      clientes,
+      produtos
     });
 
   } catch (error) {
@@ -89,6 +96,7 @@ if (req.method === "GET") {
 } else {
   res.status(405).json({ message: 'Método não permitido' });
 }
+
 
   
   if (req.method === "POST") {
