@@ -93,11 +93,7 @@ if (req.method === "GET") {
     console.error(error);
     res.status(500).json({ message: 'Erro ao consultar vendas', error: error.message });
   }
-} else {
-  res.status(405).json({ message: 'Método não permitido' });
-}
-
-
+} 
   
   if (req.method === "POST") {
     try {
@@ -139,7 +135,7 @@ if (req.method === "GET") {
       console.error(error);
       res.status(500).json({ message: 'Erro ao registrar a venda', error: error.message });
     }
-  } else {
+  } 
     res.status(405).json({ message: 'Método não permitido' });
-  }
+  
 }
