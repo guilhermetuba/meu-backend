@@ -10,66 +10,92 @@ export default async function handler(req, res) {
   }
   
 if (req.method === "GET") {
-    try {
-      const sheets = await authenticate();
-      const spreadsheetId = process.env.SPREADSHEET_ID;
+  try {
+    const sheets = await authenticate();
+    const spreadsheetId = process.env.SPREADSHEET_ID;
 
-      const { dataInicio, dataFim, cliente, produto } = req.query;
+    const { dataInicio, dataFim } = req.query;
 
-      const [vendasRes, itensRes, clientesRes, estoqueRes] = await Promise.all([
-        sheets.spreadsheets.values.get({ spreadsheetId, range: 'Vendas!A2:F' }),
-        sheets.spreadsheets.values.get({ spreadsheetId, range: 'Itens da Venda!A2:G' }),
-        sheets.spreadsheets.values.get({ spreadsheetId, range: 'Clientes!A2:F' }),
-        sheets.spreadsheets.values.get({ spreadsheetId, range: 'Estoque!A2:G' })
-      ]);
+    const [vendasRes, itensRes, clientesRes, estoqueRes] = await Promise.all([
+      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Vendas!A2:F' }),
+      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Itens da Venda!A2:G' }),
+      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Clientes!A2:F' }),
+      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Estoque!A2:G' })
+    ]);
 
-      const vendas = vendasRes.data.values || [];
-      const itens = itensRes.data.values || [];
-      const clientes = clientesRes.data.values || [];
-      const estoque = estoqueRes.data.values || [];
+    const vendas = vendasRes.data.values || [];
+    const itens = itensRes.data.values || [];
+    const clientes = clientesRes.data.values || [];
+    const estoque = estoqueRes.data.values || [];
 
-      const clienteMap = Object.fromEntries(clientes.map(([nome, cpf]) => [cpf, nome]));
-      const produtoMap = Object.fromEntries(estoque.map(([codigo, nome]) => [codigo, nome]));
+    const clienteMap = Object.fromEntries(clientes.map(([nome, cpf]) => [cpf, nome]));
+    const produtoMap = Object.fromEntries(estoque.map(([codigo, nome]) => [codigo, nome]));
 
-      const itensPorVenda = {};
-      for (const [codVenda, codProduto, cpfCliente] of itens) {
-        if (!itensPorVenda[codVenda]) itensPorVenda[codVenda] = [];
-        itensPorVenda[codVenda].push({ codProduto, cpfCliente });
-      }
-
-      let total_valor = 0;
-      let total_quantidade = 0;
-
-      for (const venda of vendas) {
-        const [codVenda, dataVenda, cpf, valorTotal] = venda;
-        const [dia, mes, ano] = dataVenda.split('/');
-        const data = new Date(`${ano}-${mes}-${dia}`);
-
-        if (dataInicio && data < new Date(dataInicio)) continue;
-        if (dataFim && data > new Date(dataFim)) continue;
-
-        const itensVenda = itensPorVenda[codVenda] || [];
-
-        const nomeCliente = clienteMap[cpf];
-        if (cliente && cliente !== nomeCliente) continue;
-
-        const nomesProdutos = itensVenda.map(item => produtoMap[item.codProduto]);
-        if (produto && !nomesProdutos.includes(produto)) continue;
-
-        const valorNumerico = parseFloat(valorTotal.replace(/\./g, '').replace(',', '.')) || 0;
-        total_valor += valorNumerico;
-        total_quantidade += itensVenda.length;
-      }
-
-      res.status(200).json({ total_valor, total_quantidade });
-
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Erro ao consultar vendas', error: error.message });
+    const itensPorVenda = {};
+    for (const [codVenda, codProduto, cpfCliente, , , valorUnitario] of itens) {
+      if (!itensPorVenda[codVenda]) itensPorVenda[codVenda] = [];
+      itensPorVenda[codVenda].push({ codProduto, cpfCliente, valorUnitario });
     }
-  } else {
-    res.status(405).json({ message: 'Método não permitido' });
+
+    let total_valor = 0;
+    let total_quantidade = 0;
+
+    const clientesTotais = {}; // cpf -> valor
+    const produtosTotais = {}; // codProduto -> valor
+
+    for (const venda of vendas) {
+      const [codVenda, dataVenda, cpf, valorTotal] = venda;
+      const [dia, mes, ano] = dataVenda.split('/');
+      const data = new Date(`${ano}-${mes}-${dia}`);
+
+      if (dataInicio && data < new Date(dataInicio)) continue;
+      if (dataFim && data > new Date(dataFim)) continue;
+
+      const valorNumerico = parseFloat(valorTotal.replace(/\./g, '').replace(',', '.')) || 0;
+      total_valor += valorNumerico;
+
+      const itensVenda = itensPorVenda[codVenda] || [];
+      total_quantidade += itensVenda.length;
+
+      // Cliente
+      if (!clientesTotais[cpf]) clientesTotais[cpf] = 0;
+      clientesTotais[cpf] += valorNumerico;
+
+      // Produtos
+      for (const item of itensVenda) {
+        const valorItem = parseFloat(item.valorUnitario?.replace(/\./g, '').replace(',', '.')) || 0;
+
+        if (!produtosTotais[item.codProduto]) produtosTotais[item.codProduto] = 0;
+        produtosTotais[item.codProduto] += valorItem;
+      }
+    }
+
+    const clientesArray = Object.entries(clientesTotais).map(([cpf, total]) => ({
+      cpf,
+      nome: clienteMap[cpf] || 'Desconhecido',
+      total: total.toFixed(2)
+    }));
+
+    const produtosArray = Object.entries(produtosTotais).map(([codigo, total]) => ({
+      codigo,
+      nome: produtoMap[codigo] || 'Desconhecido',
+      total: total.toFixed(2)
+    }));
+
+    res.status(200).json({
+      total_valor: parseFloat(total_valor.toFixed(2)),
+      total_quantidade,
+      clientes: clientesArray,
+      produtos: produtosArray
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao consultar vendas', error: error.message });
   }
+} else {
+  res.status(405).json({ message: 'Método não permitido' });
+}
 
   
   if (req.method === "POST") {
