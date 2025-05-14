@@ -31,63 +31,55 @@ if (req.method === "GET") {
     const clienteMap = Object.fromEntries(clientes.map(([nome, cpf]) => [cpf, nome]));
     const produtoMap = Object.fromEntries(estoque.map(([codigo, nome]) => [codigo, nome]));
 
+    const itensPorVenda = {};
+    for (const [ , codVenda, , codProduto, , qtdStr, valorItemStr ] of itens) {
+      if (!itensPorVenda[codVenda]) itensPorVenda[codVenda] = [];
+      itensPorVenda[codVenda].push({ codProduto, qtdStr, valorItemStr });
+    }
+
     let total_valor = 0;
     let total_quantidade = 0;
-
-    const clientesTotais = {};  // cpf -> total valor
-    const produtosTotais = {};  // codigo produto -> quantidade
+    const resumoClientes = {};
+    const resumoProdutos = {};
 
     for (const venda of vendas) {
       const [codVenda, dataVenda, cpf, valorTotal] = venda;
-      if (!dataVenda || !valorTotal) continue;
-
       const [dia, mes, ano] = dataVenda.split('/');
       const data = new Date(`${ano}-${mes}-${dia}`);
 
       if (dataInicio && data < new Date(dataInicio)) continue;
       if (dataFim && data > new Date(dataFim)) continue;
 
+      const nomeCliente = clienteMap[cpf] || 'Desconhecido';
       const valorNumerico = parseFloat(valorTotal.replace(/\./g, '').replace(',', '.')) || 0;
+
       total_valor += valorNumerico;
 
-      // Soma por cliente
-      if (cpf) {
-        clientesTotais[cpf] = (clientesTotais[cpf] || 0) + valorNumerico;
-      }
+      if (!resumoClientes[nomeCliente]) resumoClientes[nomeCliente] = 0;
+      resumoClientes[nomeCliente] += valorNumerico;
 
-      // Soma quantidade por produto vendido nesta venda
-      const itensDestaVenda = itens.filter(item => item[1] === codVenda); // coluna B = codVenda
-      total_quantidade += itensDestaVenda.length;
+      const itensVenda = itensPorVenda[codVenda] || [];
+      total_quantidade += itensVenda.reduce((sum, item) => sum + (parseInt(item.qtdStr) || 0), 0);
 
-      for (const item of itensDestaVenda) {
-        const codProduto = item[3]; // coluna D = codProduto
-        if (codProduto) {
-          produtosTotais[codProduto] = (produtosTotais[codProduto] || 0) + 1;
+      for (const { codProduto, qtdStr, valorItemStr } of itensVenda) {
+        const nomeProduto = produtoMap[codProduto] || 'Desconhecido';
+        const qtd = parseInt(qtdStr, 10) || 0;
+        const valor = parseFloat(valorItemStr.replace(/\./g, '').replace(',', '.')) || 0;
+
+        if (!resumoProdutos[nomeProduto]) {
+          resumoProdutos[nomeProduto] = { quantidade: 0, total: 0 };
         }
+
+        resumoProdutos[nomeProduto].quantidade += qtd;
+        resumoProdutos[nomeProduto].total += valor;
       }
     }
-
-    const clientesArray = Object.entries(clientesTotais)
-      .map(([cpf, total]) => ({
-        cpf,
-        nome: clienteMap[cpf] || "Desconhecido",
-        total
-      }))
-      .sort((a, b) => b.total - a.total);
-
-    const produtosArray = Object.entries(produtosTotais)
-      .map(([codigo, quantidade]) => ({
-        codigo,
-        nome: produtoMap[codigo] || "Desconhecido",
-        quantidade
-      }))
-      .sort((a, b) => b.quantidade - a.quantidade);
 
     res.status(200).json({
       total_valor,
       total_quantidade,
-      clientes: clientesArray,
-      produtos: produtosArray
+      resumoClientes,
+      resumoProdutos
     });
 
   } catch (error) {
