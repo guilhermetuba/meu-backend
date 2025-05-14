@@ -70,11 +70,14 @@ if (req.method === "GET") {
       }
     }
 
-    const clientesArray = Object.entries(clientesTotais).map(([cpf, total]) => ({
-      cpf,
-      nome: clienteMap[cpf] || 'Desconhecido',
-      total: total.toFixed(2)
-    }));
+    const clientesArray = Object.entries(clientesTotais)
+  .map(([cpf, total]) => ({
+    cpf,
+    nome: clienteMap[cpf] || 'Desconhecido',
+    total: parseFloat(total.toFixed(2))
+  }))
+  .sort((a, b) => b.total - a.total); // ordena do maior para o menor
+
 
     const produtosArray = Object.entries(produtosTotais).map(([codigo, total]) => ({
       codigo,
