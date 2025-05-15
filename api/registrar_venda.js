@@ -80,7 +80,7 @@ if (req.method === "GET") {
     }
 
     const clientes = Object.values(clienteResumo).sort((a, b) => b.total - a.total);
-    const produtos = Object.values(produtoResumo);
+    const produtos = Object.values(produtoResumo).sort((a, b) => b.total - a.total);
 
     res.status(200).json({
       total_valor,
