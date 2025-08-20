@@ -3,17 +3,15 @@
 const { google } = require("googleapis");
 
 async function authenticate() {
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
-  );
+  // Pega o JSON que você colocou no Vercel em GOOGLE_SERVICE_ACCOUNT
+  const serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 
-  oauth2Client.setCredentials({
-    refresh_token: process.env.REFRESH_TOKEN,
+  const auth = new google.auth.GoogleAuth({
+    credentials: serviceAccount,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
-  const sheets = google.sheets({ version: "v4", auth: oauth2Client });
+  const sheets = google.sheets({ version: "v4", auth });
   return sheets;
 }
 
