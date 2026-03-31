@@ -27,12 +27,12 @@ if (req.method === "POST") {
       const codigosExistentes = response.data.values || [];
 
       // Verificar se o código já está cadastrado
-      const codigoExistente = codigosExistentes.some(
-  c => String(c[0]).trim() === String(codigo).trim()
-);
+      const codigoExistente = codigosExistentes.some( c => String(c[0]).trim() === String(codigo).trim());
       if (codigoExistente) {
-        return res.status(400).json({ message: "Código já cadastrado." });
-      }
+  console.log("Código duplicado detectado");
+  res.status(400).json({ message: "Código já cadastrado." });
+  return;
+}
       const codigoLimpo = String(codigo).trim();
       // Adicionar o novo produto
       const addRequest = {
