@@ -27,7 +27,9 @@ if (req.method === "POST") {
       const codigosExistentes = response.data.values || [];
 
       // Verificar se o código já está cadastrado
-      const codigoExistente = codigosExistentes.some(c => c[0] === codigo);
+      const codigoExistente = codigosExistentes.some(
+  c => String(c[0]).trim() === String(codigo).trim()
+);
       if (codigoExistente) {
         return res.status(400).json({ message: "Código já cadastrado." });
       }
@@ -38,9 +40,10 @@ if (req.method === "POST") {
         range: 'Estoque!A2', // A célula inicial da aba "Estoque"
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [
-            [codigo, produto, fornecedor, categoria, quantidade, precoCusto, precoVenda], // Linha de dados
-          ],
+          const codigoLimpo = String(codigo).trim();
+values: [
+  [codigoLimpo, produto, fornecedor, categoria, quantidade, precoCusto, precoVenda],
+],
         },
       };
 
