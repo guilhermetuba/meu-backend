@@ -33,14 +33,13 @@ if (req.method === "POST") {
       if (codigoExistente) {
         return res.status(400).json({ message: "Código já cadastrado." });
       }
-
+      const codigoLimpo = String(codigo).trim();
       // Adicionar o novo produto
       const addRequest = {
         spreadsheetId: spreadsheetId,
         range: 'Estoque!A2', // A célula inicial da aba "Estoque"
         valueInputOption: 'USER_ENTERED',
         resource: {
-          const codigoLimpo = String(codigo).trim();
 values: [
   [codigoLimpo, produto, fornecedor, categoria, quantidade, precoCusto, precoVenda],
 ],
